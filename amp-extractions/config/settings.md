@@ -1,33 +1,34 @@
 # AMP CLI Settings Reference
 
-**Version:** 0.0.1761153678-gfa55cf  
-**Source:** `node_modules/@sourcegraph/amp/dist/main.js`  
-**Last Updated:** 2025-01-21  
-**Verification:** Oracle-assisted analysis
-
-⚠️ **IMPORTANT:** See [Settings Verification Status](./settings-verification-status.md) for detailed verification of which settings are confirmed to work. Some settings in this document are unverified or may have discrepancies between registry defaults and runtime behavior.
+**Version:** 0.0.1770366910-g1852ef
+**Source:** `node_modules/@sourcegraph/amp/dist/main.js`
+**Settings Registry Variable:** `z86` (line 7713)
+**Last Updated:** 2026-02-06
+**Analysis Method:** Extraction from minified main.js bundle
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Documented Settings](#documented-settings)
-3. [Undocumented Settings](#undocumented-settings)
-4. [Environment Variables](#environment-variables)
-5. [Configuration Examples](#configuration-examples)
-6. [Notes on Settings](#notes-on-settings)
-7. [Related Resources](#related-resources)
-8. [Verification Status](#verification-status)
+2. [CLI Settings Registry (z86)](#cli-settings-registry-z86)
+3. [VS Code Extension Settings](#vs-code-extension-settings)
+4. [Runtime-Only Settings](#runtime-only-settings)
+5. [Deprecated / Removed Settings](#deprecated--removed-settings)
+6. [Environment Variables](#environment-variables)
+7. [Changes from Previous Version (0.0.1766908883-g25743d)](#changes-from-previous-version-00017669088830-g25743d)
+8. [Summary Statistics](#summary-statistics)
 
 ---
 
 ## Overview
 
-This document provides a comprehensive reference of ALL Amp CLI configuration settings, including both documented and undocumented options. Settings are divided into:
+This document provides a comprehensive reference of ALL settings in Amp CLI version 0.0.1770366910-g1852ef. Settings are organized into four categories:
 
-- **Documented Settings**: Officially documented in the [Amp Manual](https://ampcode.com/manual#configuration)
-- **Undocumented Settings**: Present in the code but not in official documentation (hidden, experimental, or internal)
+- **CLI Settings Registry (z86)**: Settings formally defined in the CLI settings registry object. All use the `amp.` prefix when accessed by users (e.g., `amp.url`).
+- **VS Code Extension Settings**: Settings defined in the VS Code extension's `package.json` contributes.configuration section. Some overlap with CLI registry settings but may have different defaults or additional metadata.
+- **Runtime-Only Settings**: Settings accessed at runtime via `settings["key"]` or `configService.get("key")` but not present in the main CLI registry.
+- **Environment Variables**: `AMP_*` and other relevant environment variables.
 
 ### Configuration File
 
@@ -50,1343 +51,1179 @@ The prefix is stripped when the CLI loads settings internally.
 
 ---
 
-## Documented Settings
+## CLI Settings Registry (z86)
 
-These settings are officially documented in the [Amp Manual](https://ampcode.com/manual#configuration).
-
-### General Settings
-
-#### `amp.permissions`
-
-**Type:** Array of permission rules  
-**Default:** `[]`  
-**Source:** Manual, Code: main.js:1244-1290  
-
-**Description:** Define tool execution permission rules for security control.
-
-**Permission Rule Structure:**
-```json
-{
-  "tool": "tool-name",           // Tool to match (or "all")
-  "action": "allow|ask|reject",  // Permission action
-  "reason": "Explanation"        // Optional reason
-}
-```
-
-**Examples:**
-```json
-{
-  "amp.permissions": [
-    {
-      "tool": "Bash",
-      "action": "ask",
-      "reason": "Always confirm before running shell commands"
-    },
-    {
-      "tool": "edit_file",
-      "action": "allow"
-    }
-  ]
-}
-```
-
-**Notes:**
-- Merged with built-in permission rules
-- Used to gate tool invocations
-- More specific rules override general rules
+These are the 42 settings defined in the CLI settings registry object `z86`. All settings use the `amp.` prefix when accessed by users. Settings marked **NEW** were not present in the previous version (0.0.1766908883-g25743d).
 
 ---
 
-#### `amp.notifications.enabled`
+### amp.url
 
-**Type:** Boolean  
-**Default:** `true`  
-**Source:** Manual, Code: main.js:5653 (CQ6 registry)  
-**Visibility:** Visible
-
-**Description:** Enable/disable completion and blocked notification sounds in the CLI UI.
-
-**Example:**
-```json
-{
-  "amp.notifications.enabled": false
-}
-```
+- **Type:** string
+- **Default:** `"https://ampcode.com"`
+- **Visible:** false (hidden)
+- **Description:** The Amp server URL to connect to
 
 ---
 
-#### `amp.notifications.system.enabled`
+### amp.workerUrl
 
-**Type:** Boolean  
-**Default:** `true`  
-**Source:** Manual, Code: main.js:5653 (CQ6 registry)  
-**Visibility:** Visible
-
-**Description:** Show system desktop notifications when terminal is not focused.
-
-**Example:**
-```json
-{
-  "amp.notifications.system.enabled": false
-}
-```
+- **Type:** string
+- **Default:** `"http://localhost:8787"`
+- **Visible:** false (hidden)
+- **Description:** URL to the Cloudflare Worker for agent loop operations
+- **NEW in this version**
 
 ---
 
-#### `amp.anthropic.thinking.enabled`
+### amp.anthropic.thinking.enabled
 
-**Type:** Boolean  
-**Default:** `true` (runtime default when unset)  
-**Source:** Manual, Code: main.js:5653 (registry), main.js:1225 (runtime)  
-**Visibility:** Hidden in code
-
-**Description:** Enable Claude's extended thinking mode for deeper reasoning.
-
-**Example:**
-```json
-{
-  "amp.anthropic.thinking.enabled": false
-}
-```
-
-**How It Works:**
-- **When NOT set** (default): Thinking is ENABLED (`true`) via runtime fallback (`?? true` at line 1225)
-- **When set to `true`**: Thinking is ENABLED (explicit)
-- **When set to `false`**: Thinking is DISABLED (explicit)
-
-**What You'll See:**
-- **Enabled**: Claude shows thinking summaries in CLI output and web interface, uses extended reasoning tokens
-- **Disabled**: No thinking blocks, faster responses, uses temperature setting instead
-
-**Note:** The registry default (`false` at line 5653) is overridden by runtime logic that defaults to `true` when the setting is unset. The manual is correct - the effective default is `true`.
+- **Type:** boolean
+- **Default:** `false`
+- **Visible:** false (hidden)
+- **Description:** Enable Claude thinking process output for debugging
 
 ---
 
-#### `amp.updates.mode`
+### amp.anthropic.interleavedThinking.enabled
 
-**Type:** String enum: `"auto"` | `"warn"` | `"disabled"`  
-**Default:** `"auto"`  
-**Source:** Manual, Code: main.js:5757-5769  
-
-**Description:** Control update checking and installation behavior.
-
-**Values:**
-- `auto` - Automatically check and install updates
-- `warn` - Check for updates but only warn, don't auto-install
-- `disabled` - Disable update checks entirely
-
-**Example:**
-```json
-{
-  "amp.updates.mode": "warn"
-}
-```
+- **Type:** boolean
+- **Default:** `false`
+- **Visible:** false (hidden)
+- **Description:** Enable interleaved thinking for Claude 4 models (allows reasoning between tool calls)
 
 ---
 
-### Git Integration Settings
+### amp.anthropic.temperature
 
-#### `amp.git.commit.ampThread.enabled`
-
-**Type:** Boolean  
-**Default:** `true`  
-**Source:** Manual, Code: main.js:1337-1346  
-
-**Description:** Add `Amp-Thread-ID` trailer to git commits.
-
-**Trailer Format:**
-```
-Amp-Thread-ID: https://ampcode.com/threads/{threadId}
-```
-
-**Example:**
-```json
-{
-  "amp.git.commit.ampThread.enabled": true
-}
-```
-
-**Git Commit Example:**
-```
-feat: Add new feature
-
-Implemented XYZ functionality
-
-Amp-Thread-ID: https://ampcode.com/threads/abc123
-```
+- **Type:** number
+- **Default:** `1`
+- **Visible:** false (hidden)
+- **Description:** Temperature setting for Anthropic models (0.0 = deterministic, 1.0 = creative). Note: Only takes effect when thinking is disabled. Internal use only.
 
 ---
 
-#### `amp.git.commit.coauthor.enabled`
+### amp.anthropic.effort
 
-**Type:** Boolean  
-**Default:** `true`  
-**Source:** Manual, Code: main.js:1337-1346  
-
-**Description:** Add `Co-authored-by` trailer for Amp to git commits.
-
-**Trailer Format:**
-```
-Co-authored-by: Amp <amp@ampcode.com>
-```
-
-**Example:**
-```json
-{
-  "amp.git.commit.coauthor.enabled": true
-}
-```
-
-**Git Commit Example:**
-```
-feat: Add new feature
-
-Implemented XYZ functionality
-
-Co-authored-by: Amp <amp@ampcode.com>
-```
+- **Type:** string
+- **Default:** `"high"`
+- **Visible:** false (hidden)
+- **Description:** Effort level for Anthropic models that support auto-thinking (low, medium, high, max). Higher effort means more thinking and better performance.
+- **NEW in this version**
 
 ---
 
-### Tools & Execution Settings
+### amp.internal.deepReasoningEffort
 
-#### `amp.todos.enabled`
-
-**Type:** Boolean  
-**Default:** `true`  
-**Source:** Manual, Code: main.js:5653 (CQ6 registry)  
-**Visibility:** Hidden
-
-⚠️ **VERIFICATION WARNING:** This setting may be non-functional. Runtime code appears to hardcode `enableTodos:true` (line 1234) instead of reading the setting. See [verification status](./settings-verification-status.md#amp-todos-enabled) for details.
-
-**Description:** Enable TODO tracking tool integration.
-
-**Example:**
-```json
-{
-  "amp.todos.enabled": false
-}
-```
-
-**Notes:**
-- Toggles TODO tracking tool in system prompt
-- Affects whether agent can create/manage task lists
-- **Warning:** Setting may be ignored by runtime code (unverified)
+- **Type:** string
+- **Default:** `"medium"`
+- **Visible:** false (hidden)
+- **Description:** Reasoning effort override for GPT-5.2 Codex in deep mode (medium, high, xhigh)
+- **NEW in this version**
 
 ---
 
-#### `amp.tools.disable`
+### amp.gemini.thinkingLevel
 
-**Type:** Array of strings  
-**Default:** `["browser_navigate", "builtin:edit_file"]`  
-**Source:** Manual, Code: main.js:5653 (CQ6 registry)  
-**Visibility:** Visible
-
-⚠️ **VERIFICATION WARNING:** Runtime usage not confirmed. Setting exists in registry but exact filtering logic not found. May need manual testing to verify functionality.
-
-**Description:** Disable specific tools by name. Use `"builtin:toolname"` to disable only built-in tools.
-
-**Example:**
-```json
-{
-  "amp.tools.disable": [
-    "browser_navigate",
-    "builtin:edit_file",
-    "Bash"
-  ]
-}
-```
-
-**Notes:**
-- Completely removes tools from available tool list
-- Different from permissions (which gate execution)
-- `builtin:` prefix targets only built-in tools, not MCP tools
-- **Verification status:** Unverified - needs manual testing
+- **Type:** undefined (string when set)
+- **Default:** `undefined`
+- **Visible:** false (hidden)
+- **Description:** Thinking level for Gemini models (minimal, low, medium, high, or undefined)
+- **NEW in this version**
 
 ---
 
-#### `amp.tools.stopTimeout`
+### amp.notifications.enabled
 
-**Type:** Number (seconds)  
-**Default:** `300`  
-**Source:** Manual  
-
-⚠️ **VERIFICATION WARNING:** Not found in settings registry (line 5653). May be documented name for `amp.tools.inactivityTimeout` or may not be functional. Needs manual testing.
-
-**Description:** Timeout for stopping long-running tools.
-
-**Example:**
-```json
-{
-  "amp.tools.stopTimeout": 600
-}
-```
-
-**Note:** See also `amp.tools.inactivityTimeout` in undocumented settings (may be the same feature or this setting may not actually exist).
+- **Type:** boolean
+- **Default:** `true`
+- **Visible:** true
+- **Description:** Enable system sound notifications when agent completes tasks
 
 ---
 
-### Terminal Settings
+### amp.notifications.system.enabled
 
-#### `amp.terminal.commands.nodeSpawn.loadProfile`
-
-**Type:** String enum: `"always"` | `"never"` | `"daily"`  
-**Default:** `"always"`  
-**Source:** Manual, Code: main.js:1333-1347  
-
-**Description:** Control when to load shell profile environment for child processes (including MCP servers).
-
-**Values:**
-- `always` - Load profile for every command
-- `never` - Never load profile
-- `daily` - Load profile once per day
-
-**Example:**
-```json
-{
-  "amp.terminal.commands.nodeSpawn.loadProfile": "daily"
-}
-```
-
-**Notes:**
-- Affects environment variables available to spawned processes
-- Can impact MCP server initialization
-- Daily mode caches environment to avoid repeated shell startup overhead
+- **Type:** boolean
+- **Default:** `true`
+- **Visible:** true
+- **Description:** Enable system notifications when terminal is not focused
 
 ---
 
-### MCP Integration Settings
+### amp.agent.skipTitleGenerationIfMessageContains
 
-#### `amp.mcpServers`
-
-**Type:** Object (server configuration map)  
-**Default:** Example filesystem server  
-**Source:** Manual, Code: main.js:5653 (CQ6 registry)  
-**Visibility:** Visible
-
-**Description:** Configure Model Context Protocol (MCP) servers to provide additional tools.
-
-**Structure:**
-```json
-{
-  "amp.mcpServers": {
-    "server-name": {
-      "command": "executable",
-      "args": ["arg1", "arg2"],
-      "env": {
-        "KEY": "value"
-      }
-    }
-  }
-}
-```
-
-**Example:**
-```json
-{
-  "amp.mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": [
-        "@modelcontextprotocol/server-filesystem",
-        "/home/user/projects"
-      ]
-    },
-    "database": {
-      "command": "node",
-      "args": ["/path/to/db-mcp-server.js"],
-      "env": {
-        "DB_CONNECTION": "postgresql://..."
-      }
-    }
-  }
-}
-```
-
-**Notes:**
-- Each server exposes tools to the agent
-- Servers are spawned as child processes
-- Environment variables can be passed to servers
-- MCP specification: https://modelcontextprotocol.io
+- **Type:** array (of strings)
+- **Default:** `[]`
+- **Visible:** false (hidden)
+- **Description:** List of strings that, if present in a message, will skip title generation
+- **NEW in this version**
 
 ---
 
-### Editor Only Settings
+### amp.mcpServers
 
-These settings apply only to the VS Code extension, not the CLI:
-
-#### `amp.tab.enabled`
-
-**Type:** Boolean  
-**Default:** `false`  
-**Source:** Manual  
-**Scope:** Editor only
-
-**Description:** Enable Tab completion engine in VS Code.
+- **Type:** object
+- **Default:** `{ filesystem: { command: "npx", args: ["@modelcontextprotocol/server-filesystem", "/path/to/allowed/dir"] } }`
+- **Visible:** true
+- **Description:** Model Context Protocol servers to connect to for additional tools
 
 ---
 
-#### `amp.ui.zoomLevel`
+### amp.tools.disable
 
-**Type:** Number  
-**Default:** `1`  
-**Source:** Manual  
-**Scope:** Editor only
-
-**Description:** Zoom level for Amp UI in VS Code.
+- **Type:** array (of strings)
+- **Default:** `["browser_navigate", "builtin:edit_file"]`
+- **Visible:** true
+- **Description:** Array of tool names to disable. Use 'builtin:toolname' to disable only the builtin tool with that name (allowing an MCP server to provide a tool by that name).
 
 ---
 
-#### `amp.debugLogs`
+### amp.tools.enable
 
-**Type:** Boolean  
-**Default:** `false`  
-**Source:** Manual  
-**Scope:** Editor only
-
-**Description:** Enable debug logging in VS Code extension.
-
----
-
-## Undocumented Settings
-
-These settings are present in the CLI code but not officially documented. They may be experimental, internal, or hidden features.
-
-### Core Settings
-
-#### `amp.url`
-
-**Type:** String (URL)  
-**Default:** `"https://ampcode.com"`  
-**Source:** main.js:5653 (CQ6 registry)  
-**Visibility:** Hidden (`visible: false`)
-
-**Description:** Base URL for Amp API server. All API requests (except OpenRouter) are routed through this server.
-
-**Example:**
-```json
-{
-  "amp.url": "https://custom-amp-server.company.com"
-}
-```
-
-**Notes:**
-- Also configurable via `AMP_URL` environment variable
-- Set during login flow and persisted
-- Critical for proxy configuration
-- See [endpoints.md](./endpoints.md) for endpoint details
+- **Type:** array (of strings) or undefined
+- **Default:** `undefined`
+- **Visible:** true
+- **Description:** Array of tool name patterns to enable. Supports glob patterns (e.g., 'mcp__metabase__*'). If not set, all tools are enabled. If set, only matching tools are enabled.
+- **NEW in this version**
 
 ---
 
-### Anthropic Model Configuration
+### amp.tools.inactivityTimeout
 
-#### `amp.anthropic.interleavedThinking.enabled`
-
-**Type:** Boolean  
-**Default:** `false`  
-**Source:** main.js:5653 (CQ6 registry)  
-**Visibility:** Hidden
-
-**Description:** Enable interleaved thinking mode for Claude 4, allowing thinking between tool calls.
-
-**Example:**
-```json
-{
-  "amp.anthropic.interleavedThinking.enabled": true
-}
-```
-
-**Notes:**
-- Experimental feature for Claude 4
-- Allows model to "think" between tool executions
-- May improve reasoning quality but increase latency
+- **Type:** number
+- **Default:** `300`
+- **Visible:** false (hidden)
+- **Description:** How many seconds of no output to wait before canceling bash commands
 
 ---
 
-#### `amp.anthropic.temperature`
+### amp.tools.stopTimeout
 
-**Type:** Number  
-**Default:** `1`  
-**Source:** main.js:5653 (registry), main.js:1225 (runtime check)  
-**Visibility:** Hidden
-
-**Description:** Temperature setting for Claude when thinking mode is disabled.
-
-**Example:**
-```json
-{
-  "amp.anthropic.thinking.enabled": false,
-  "amp.anthropic.temperature": 0.7
-}
-```
-
-**Notes:**
-- **Only applies when `amp.anthropic.thinking.enabled` is explicitly set to `false`**
-- When thinking is enabled (the default), this setting is ignored
-- Range typically 0.0 to 1.0
-- Lower values = more deterministic, higher = more creative
-- Thinking mode has its own internal temperature/sampling strategy
+- **Type:** number
+- **Default:** `300`
+- **Visible:** false (hidden)
+- **Description:** Timeout for stopping tools
+- **NEW in this version**
 
 ---
 
-### Model & Agent Configuration
+### amp.network.timeout
 
-#### `amp.experimental.agentMode`
-
-**Type:** String  
-**Default:** Unset (uses CLI default mode)  
-**Source:** main.js:6422-6435, 1294-1308  
-**Visibility:** Experimental
-
-**Description:** Override agent mode for the thread/session. Influences system prompt, toolset, and model selection.
-
-**Known Modes:**
-
-**Production Modes:**
-- `smart` - Balanced performance and capability
-- `fast` - Optimized for speed
-- `free` - Free tier models
-
-**Experimental Modes:**
-- `geppetto` - Experimental mode
-- `pinocchio` - Experimental mode
-- `claudius` - Experimental mode
-- `opus4.1` - Claude Opus 4.1 early access
-- `bolt` - Experimental fast mode
-- `hydrogen` - Experimental mode
-- `kashmir` - Experimental mode
-- `gossip` - Experimental mode
-- `sonomoon` - Experimental mode
-- `gronk-fast` - Groq-based fast mode
-
-**Mode Variants:**
-- `:main` - Main agent variant
-- `:search` - Search-optimized variant
-- `:main+search` - Combined variant
-
-**Example:**
-```json
-{
-  "amp.experimental.agentMode": "fast"
-}
-```
-
-**Notes:**
-- Experimental modes may change or be removed
-- Not all modes may be available in all CLI versions
-- Some modes may require specific API access
+- **Type:** number
+- **Default:** `30`
+- **Visible:** true
+- **Description:** How many seconds to wait for network requests to the Amp server before timing out
+- **NEW in this version**
 
 ---
 
-### Tools & Execution
+### amp.permissions
 
-#### `amp.tools.inactivityTimeout`
-
-**Type:** Number (seconds)  
-**Default:** `300`  
-**Source:** main.js:5653 (CQ6 registry)  
-**Visibility:** Hidden
-
-⚠️ **VERIFICATION WARNING:** Present in registry but no runtime usage found. May be related to `amp.tools.stopTimeout` from manual. Needs manual testing to confirm functionality.
-
-**Description:** Timeout for tool inactivity. Internal throttling/timer mechanism.
-
-**Example:**
-```json
-{
-  "amp.tools.inactivityTimeout": 600
-}
-```
-
-**Notes:**
-- May be related to or same as documented `amp.tools.stopTimeout`
-- Controls how long to wait before timing out inactive tool execution
-- **Verification status:** Unverified - needs manual testing
+- **Type:** array (of permission rule objects)
+- **Default:** `[{ tool: "Bash", action: "ask", matches: { cmd: ["git push*", "git commit*", "git branch -D*", "git checkout HEAD*"] } }]`
+- **Visible:** true
+- **Description:** Permission rules for tool calls. See amp permissions --help
 
 ---
 
-### Terminal & Input
+### amp.guardedFiles.allowlist
 
-#### `amp.dangerouslyAllowAll`
-
-**Type:** Boolean  
-**Default:** `false`  
-**Source:** main.js:1244-1290 (permissions map)  
-
-**Description:** Bypass all permission prompts and execute all tools without asking.
-
-**Example:**
-```json
-{
-  "amp.dangerouslyAllowAll": true
-}
-```
-
-**⚠️ WARNING:**
-- Extremely dangerous - allows unrestricted tool execution
-- Bypasses all security controls
-- Only use in fully trusted, sandboxed environments
-- Also available as CLI flag
+- **Type:** array (of strings)
+- **Default:** `[]`
+- **Visible:** true
+- **Description:** Array of file glob patterns that are allowed to be accessed without confirmation. Takes precedence over the built-in denylist.
+- **NEW in this version**
 
 ---
 
-### Experimental Features
+### amp.dangerouslyAllowAll
 
-#### `amp.experimental.cli.nativeSecretsStorage.enabled`
-
-**Type:** Boolean  
-**Default:** `false`  
-**Source:** main.js:5653 (qy1), 5650-5653  
-**Visibility:** Experimental
-
-**Description:** Use OS native keyring for secrets storage instead of file-based storage.
-
-**Example:**
-```json
-{
-  "amp.experimental.cli.nativeSecretsStorage.enabled": true
-}
-```
-
-**Notes:**
-- Uses `@napi-rs/keyring` for secure OS-level secret storage
-- When disabled, falls back to file-based secrets
-- Supported platforms: macOS (Keychain), Windows (Credential Manager), Linux (libsecret)
+- **Type:** boolean
+- **Default:** `false`
+- **Visible:** true
+- **Description:** Disable all command confirmation prompts (agent will execute all commands without asking)
 
 ---
 
-### Debugging & Development
+### amp.submitOnEnter
 
-#### `amp.debug.httpLogging`
-
-**Type:** Boolean  
-**Default:** `false`  
-**Source:** main.js:6434-6440 (FZ)  
-**Visibility:** Internal
-
-**Description:** Enable HTTP wire logging for debugging network requests.
-
-**Example:**
-```json
-{
-  "amp.debug.httpLogging": true
-}
-```
-
-**Notes:**
-- Logs all HTTP requests and responses
-- Useful for debugging API issues
-- May expose sensitive data in logs (API keys, request bodies)
+- **Type:** boolean
+- **Default:** `true`
+- **Visible:** false (hidden)
+- **Description:** Whether to submit messages on Enter (true) or require Ctrl+Enter (false)
+- **NEW in this version**
 
 ---
 
-### Integration Settings
+### amp.terminal.commands.nodeSpawn.loadProfile
 
-#### `amp.openrouter.apiKey`
-
-**Type:** String  
-**Source:** Code references to OpenRouter configuration  
-**Visibility:** Undocumented
-
-**Description:** API key for OpenRouter direct connection (not proxied through amp.url).
-
-**Example:**
-```json
-{
-  "amp.openrouter.apiKey": "sk-or-xxxxx"
-}
-```
-
-**Notes:**
-- Required to use OpenRouter models (Kimi K2, Sonoma Sky)
-- Also configurable via `OPENROUTER_API_KEY` environment variable
-- This is NOT the same as `AMP_API_KEY`
-- See [endpoints.md](./endpoints.md) for OpenRouter details
+- **Type:** string
+- **Default:** `"daily"`
+- **Visible:** false (hidden)
+- **Description:** How often to load shell profile in node-spawn mode (always, daily, never)
 
 ---
 
-#### `amp.jetbrains.skipInstall`
+### amp.terminal.animation
 
-**Type:** Boolean  
-**Default:** `false`  
-**Source:** main.js:6405-6407  
-**Visibility:** Internal
-
-**Description:** Skip JetBrains plugin installation prompts.
-
-**Example:**
-```json
-{
-  "amp.jetbrains.skipInstall": true
-}
-```
-
-**Notes:**
-- Suppresses JetBrains IDE plugin install flow
-- Set via installer UI "Always Skip" option
+- **Type:** boolean
+- **Default:** `true`
+- **Visible:** true
+- **Description:** Set to false to disable terminal animations (or use the equivalent NO_ANIMATION=1 env var)
+- **NEW in this version**
 
 ---
 
-### Internal Settings
+### amp.terminal.theme
 
-#### `amp.internal.scaffoldCustomizationFile`
+- **Type:** string
+- **Default:** `"terminal"`
+- **Visible:** true
+- **Description:** Color theme for the CLI. Built-in: terminal, dark, light, catppuccin-mocha, solarized-dark, solarized-light, gruvbox-dark-hard, nord. Custom themes: ~/.config/amp/themes/<name>/colors.toml
+- **NEW in this version**
 
-**Type:** String (file path)  
-**Default:** Unset  
-**Source:** main.js:860-866, 1297-1311  
-**Visibility:** Internal
+---
 
-**Description:** Path to YAML file for system prompt scaffold customization.
+### amp.debugLogs
 
-**Example:**
-```json
-{
-  "amp.internal.scaffoldCustomizationFile": "/path/to/custom-scaffold.yaml"
-}
-```
+- **Type:** boolean
+- **Default:** `false`
+- **Visible:** false (hidden)
+- **Description:** Enable debug logging output
 
-**Notes:**
-- CLI will create/populate file on first use
-- Advanced feature for customizing agent behavior
-- YAML format expected
+---
+
+### amp.hooks
+
+- **Type:** array (of hook objects)
+- **Default:** `[]`
+- **Visible:** false (hidden)
+- **Description:** Custom hooks for extending Amp functionality
+- **NEW in this version**
+
+---
+
+### amp.anthropic.provider
+
+- **Type:** string
+- **Default:** `"anthropic"`
+- **Visible:** false (hidden)
+- **Description:** Which provider to use for Anthropic Claude inference: "anthropic" or "vertex"
+- **NEW in this version**
+
+---
+
+### amp.experimental.cli.nativeSecretsStorage.enabled
+
+- **Type:** boolean
+- **Default:** `false`
+- **Visible:** false (hidden)
+- **Description:** Use native secret storage instead of the plain-text secrets configuration file
+
+---
+
+### amp.experimental.tools
+
+- **Type:** array (of strings)
+- **Default:** `[]`
+- **Visible:** false (hidden)
+- **Description:** Enable experimental tools by name
+- **NEW in this version**
+
+---
+
+### amp.experimental.modes
+
+- **Type:** array (of strings)
+- **Default:** `[]`
+- **Visible:** true
+- **Description:** Enable experimental agent modes by name. Available modes: deep
+- **NEW in this version**
+
+---
+
+### amp.fuzzy.alwaysIncludePaths
+
+- **Type:** array (of strings)
+- **Default:** `[]`
+- **Visible:** true
+- **Description:** Glob patterns for paths that should always be included in fuzzy file search, even if gitignored
+- **NEW in this version**
+
+---
+
+### amp.systemPrompt
+
+- **Type:** string or undefined
+- **Default:** `undefined`
+- **Visible:** false (hidden)
+- **Description:** Custom system prompt text to append (SDK use only)
+- **NEW in this version**
+
+---
+
+### amp.skills.path
+
+- **Type:** string or undefined
+- **Default:** `undefined`
+- **Visible:** true
+- **Description:** Path to additional directories containing skills. Supports colon-separated paths (semicolon on Windows). Use ~ for home directory.
+- **NEW in this version**
+
+---
+
+### amp.toolbox.path
+
+- **Type:** string or undefined
+- **Default:** `undefined`
+- **Visible:** true
+- **Description:** Path to the directory containing toolbox scripts. Supports colon-separated paths.
+- **NEW in this version**
+
+---
+
+### amp.git.commit.coauthor.enabled
+
+- **Type:** boolean
+- **Default:** `true`
+- **Visible:** true
+- **Description:** Enable adding Amp as co-author in git commits
+
+---
+
+### amp.git.commit.ampThread.enabled
+
+- **Type:** boolean
+- **Default:** `true`
+- **Visible:** true
+- **Description:** Enable adding Amp-Thread trailer in git commits
+
+---
+
+### amp.jetbrains.skipInstall
+
+- **Type:** boolean
+- **Default:** `false`
+- **Visible:** false (hidden)
+- **Description:** Skip JetBrains plugin installation
+
+---
+
+### amp.proxy
+
+- **Type:** string or undefined
+- **Default:** `undefined`
+- **Visible:** true
+- **Description:** Proxy URL used for both HTTP and HTTPS requests to the Amp server
+- **NEW in this version**
+
+---
+
+### amp.updates.mode
+
+- **Type:** string
+- **Default:** `"auto"`
+- **Visible:** true
+- **Description:** Control update checking behavior: "warn" shows update notifications, "disabled" turns off checking, "auto" automatically runs update.
+
+---
+
+### amp.showCosts
+
+- **Type:** boolean
+- **Default:** `true`
+- **Visible:** true
+- **Description:** Set to false to hide costs while working on a thread
+- **NEW in this version**
+
+---
+
+## VS Code Extension Settings
+
+These are the 35 settings defined in the VS Code extension's `package.json` contributes.configuration section. Some overlap with CLI registry settings but may have different defaults or additional metadata.
+
+---
+
+### amp.url
+
+- **Type:** string
+- **Examples:** `["https://ampcode.com/"]`
+- **Description:** URL to the Amp server, usually https://ampcode.com/
+- **Scope:** application
+
+---
+
+### amp.workerUrl
+
+- **Type:** string
+- **Examples:** `["http://localhost:8787"]`
+- **Description:** URL to the Cloudflare Worker for agent loop operations. Defaults to http://localhost:8787 for local development.
+- **Scope:** application
+
+---
+
+### amp.notifications.enabled
+
+- **Type:** boolean
+- **Default:** true
+- **Description:** Play notification sound when done or blocked
+- **Scope:** window
+
+---
+
+### amp.network.timeout
+
+- **Type:** number
+- **Default:** 30
+- **Minimum:** 5
+- **Maximum:** 600
+- **Description:** How many seconds to wait for network requests to the Amp server before timing out. Increase this value if you have a slow network connection.
+- **Scope:** application
+
+---
+
+### amp.mcpServers
+
+- **Type:** object
+- **Description:** Model Context Protocol servers that expose tools
+- **Supports:** command+args objects and URL-based server definitions (with OAuth support)
+
+---
+
+### amp.mcpPermissions
+
+- **Type:** array
+- **Default:** `[]`
+- **Description:** Permissions for Model Context Protocol (MCP) servers. Controls which MCP servers can be used.
+- **Scope:** application
+- **Items:** Objects with `matches` and `action` ("allow"/"reject") properties
+
+---
+
+### amp.mcpTrustedServers
+
+- **Type:** array
+- **Description:** MCP server trust decisions. Security Note: This setting is only read from user settings, never workspace settings, to prevent malicious repositories from auto-approving their own servers.
+
+---
+
+### amp.workspaces
+
+- **Type:** array
+- **Description:** Workspace-level configuration. This setting is only read from user settings, never workspace settings.
+- **Scope:** application
+- **Items:** Objects with `path` (string), `allowAllMcpServers` (boolean)
+
+---
+
+### amp.bitbucket.enterprise.connections
+
+- **Type:** array
+- **Default:** `[]`
+- **Description:** Local Bitbucket Enterprise connections for librarian tools.
+- **Scope:** application
+- **Items:** Objects with `instanceUrl` (string), `accessToken` (string)
+
+---
+
+### amp.permissions
+
+- **Type:** Uses JSON schema reference `https://static.ampcode.com/schemas/permissions.schema.json`
+- **Default:** `[]`
+- **Description:** Entries checked in sequence to configure tool permissions
+
+---
+
+### amp.experimental.compaction
+
+- **Type:** boolean or number
+- **Default:** false
+- **Description:** Enable auto-compaction when context window is nearly full. Set to `true` for 90% threshold, or a number 0-100 for custom percentage.
+- **Scope:** window
+
+---
+
+### amp.experimental.tools
+
+- **Type:** array of strings
+- **Description:** Enable experimental tools by name
+
+---
+
+### amp.experimental.modes
+
+- **Type:** array of strings
+- **Description:** Enable experimental agent modes by name.
+
+---
+
+### amp.experimental.promptAutocomplete.verboseLogging
+
+- **Type:** boolean
+- **Default:** false
+- **Description:** Enable verbose logging for prompt autocomplete.
+- **Scope:** application
+
+---
+
+### amp.experimental.reviewSubagent
+
+- **Type:** boolean
+- **Default:** false
+- **Description:** Enable the review subagent as a tool for use by the main agent in smart mode.
+- **Scope:** window
+
+---
+
+### amp.tools.disable
+
+- **Type:** array of strings
+- **Description:** Disable specific tools by name. Glob patterns using * are supported. Examples: Disable edit_file: `["builtin:edit_file"]`, Disable all playwright tab tools: `["mcp__playwright__browser_tab*"]`
+
+---
+
+### amp.tools.inactivityTimeout
+
+- **Type:** number
+- **Default:** 300
+- **Minimum:** 1
+- **Maximum:** 3600
+- **Description:** How many seconds of no output to wait before canceling bash commands.
+- **Scope:** workspace
+
+---
+
+### amp.tools.stopTimeout
+
+- **Type:** number
+- **Default:** 300
+- **Description:** How many seconds to wait before canceling a running tool.
+- **Scope:** application
+
+---
+
+### amp.skills.path
+
+- **Type:** string
+- **Description:** Path to additional directories containing skills. Supports colon-separated paths (semicolon on Windows). Use `~` for home directory.
+- **Scope:** window
+
+---
+
+### amp.toolbox.path
+
+- **Type:** string
+- **Description:** Path to the directory containing toolbox scripts. Supports colon-separated paths.
+- **Scope:** window
+
+---
+
+### amp.dangerouslyAllowAll
+
+- **Type:** boolean
+- **Default:** false
+- **Description:** If true, never ask for confirmation when running commands
+- **Scope:** window
+
+---
+
+### amp.anthropic.thinking.enabled
+
+- **Type:** boolean
+- **Default:** true (NOTE: VS Code default differs from CLI default of false)
+- **Description:** Enable Claude's extended thinking capabilities
+- **Scope:** application
+
+---
+
+### amp.anthropic.effort
+
+- **Type:** string
+- **Enum:** `["low", "medium", "high", "max"]`
+- **Default:** "high"
+- **Description:** Effort level for Anthropic models that support auto-thinking. Higher effort means more thinking and better performance.
+- **Scope:** application
+
+---
+
+### amp.hooks
+
+- **Type:** array
+- **Default:** `[]`
+- **Scope:** window
+- **Description:** [Experimental] Hooks are event handlers that can react to specific conditions.
+- **Items:** Objects with `compatibilityDate` (const "2025-05-13"), `id`, `on`, `action` required
+
+---
+
+### amp.git.commit.coauthor.enabled
+
+- **Type:** boolean
+- **Default:** true
+- **Description:** Enable adding Amp as co-author in git commits
+- **Scope:** window
+
+---
+
+### amp.git.commit.ampThread.enabled
+
+- **Type:** boolean
+- **Default:** true
+- **Description:** Enable adding Amp-Thread trailer in git commits
+- **Scope:** window
+
+---
+
+### amp.showCosts
+
+- **Type:** boolean
+- **Default:** true
+- **Description:** Show cost information for threads
+- **Scope:** application
+
+---
+
+### amp.submitOnEnter
+
+- **Type:** boolean
+- **Default:** false (NOTE: VS Code default differs from CLI default of true)
+- **Description:** Submit messages with Enter instead of Cmd+Enter (macOS) or Ctrl+Enter (Windows/Linux).
+- **Scope:** application
+
+---
+
+### amp.debug.logReview
+
+- **Type:** boolean
+- **Default:** false
+- **Description:** Enable debug logging for review git operations
+- **Scope:** application
+
+---
+
+### amp.debugLogs
+
+- **Type:** boolean
+- **Default:** false
+- **Description:** Enable debug logging in the Amp output channel
+- **Scope:** application
+
+---
+
+### amp.ui.zoomLevel
+
+- **Type:** number
+- **Default:** 1
+- **Description:** Zoom level for the Amp UI
+- **Scope:** application
+
+---
+
+### amp.review.separatePanel
+
+- **Type:** boolean
+- **Default:** false
+- **Description:** Show the review panel as a separate container that's independently draggable to a different sidebar location.
+- **Scope:** window
+
+---
+
+### amp.model.sonnet (DEPRECATED)
+
+- **Type:** boolean
+- **Default:** false
+- **Description:** (Deprecated) Use large mode instead. See https://ampcode.com/news/large-mode
+- **Deprecation message:** This setting has been removed. Use large mode instead: set amp.experimental.agentMode to 'large'.
+- **Scope:** window
+
+---
+
+### amp.terminal.commands.nodeSpawn.loadProfile
+
+- **Type:** string
+- **Enum:** `["always", "never", "daily"]`
+- **Default:** "always" (NOTE: VS Code default differs from CLI default of "daily")
+- **Description:** Before running commands (including MCP servers), whether to load environment variables from the user's profile (.bashrc, .zshrc, etc.)
+
+---
+
+### amp.guardedFiles.allowlist
+
+- **Type:** array
+- **Description:** Glob patterns for files that should bypass guarded file protection
+
+---
+
+### amp.fuzzy.alwaysIncludePaths
+
+- **Type:** array
+- **Description:** Glob patterns for paths that should always be included in fuzzy file search, even if gitignored. Dotfiles and directories starting with `.` are supported.
+- **Scope:** window
+
+---
+
+## Runtime-Only Settings
+
+These 7 settings are accessed at runtime via `settings["key"]` or `configService.get("key")` but do not appear in the main CLI registry `z86`. They may be set through other configuration mechanisms.
+
+---
+
+### openrouter.apiKey
+
+- **Type:** string
+- **Used at:** `settings["openrouter.apiKey"]` / also reads `OPENROUTER_API_KEY` env var
+- **Description:** API key for OpenRouter. Used when connecting to OpenRouter models (e.g., openrouter/sonoma-sky-alpha). Error message: "Please set amp.openrouter.apiKey setting or OPENROUTER_API_KEY environment variable."
+
+---
+
+### experimental.autoSnapshot
+
+- **Type:** boolean
+- **Default:** false
+- **Used at:** `settings["experimental.autoSnapshot"]`
+- **Description:** Controls automatic snapshot behavior before agent operations
+
+---
+
+### experimental.cli.commandTelemetry.enabled
+
+- **Type:** boolean
+- **Default:** false (inferred)
+- **Used at:** `settings["experimental.cli.commandTelemetry.enabled"]`
+- **Description:** Enables CLI command telemetry submission
+
+---
+
+### agent.showUsageDebugInfo
+
+- **Type:** boolean
+- **Default:** false
+- **Used at:** `settings["agent.showUsageDebugInfo"]`
+- **Description:** Shows detailed usage/cost debug info (only visible to dogfooding users with @sourcegraph.com or @ampcode.com emails)
+
+---
+
+### internal.scaffoldCustomizationFile
+
+- **Type:** string
+- **Default:** undefined
+- **Used at:** `settings["internal.scaffoldCustomizationFile"]`
+- **Description:** Path to a scaffold customization file for system prompt construction
+
+---
+
+### internal.fireworks.directRouting
+
+- **Type:** boolean (inferred)
+- **Used at:** `settings["internal.fireworks.directRouting"]`
+- **Description:** Enables direct routing for Fireworks AI models
+
+---
+
+### internal.kimi.reasoning
+
+- **Type:** string
+- **Default:** `"medium"`
+- **Used at:** `settings["internal.kimi.reasoning"]`
+- **Description:** Reasoning effort level for Kimi models. Set to "none" to disable reasoning (reduces temperature from 1.0 to 0.6 for Kimi models)
+
+---
+
+### internal.cli.logViewer
+
+- **Type:** string
+- **Default:** undefined (falls back to $PAGER)
+- **Used at:** `configService.get("internal.cli.logViewer")`
+- **Description:** Command to use for viewing CLI log files
+
+---
+
+### experimental.compaction
+
+- **Type:** boolean or number
+- **Default:** false
+- **Used at:** `settings["experimental.compaction"]`
+- **Description:** Enables auto-compaction. Shows "Enable amp.experimental.compaction to use this feature" when disabled.
+
+---
+
+### bitbucket.enterprise.connections
+
+- **Type:** array
+- **Used at:** `settings["bitbucket.enterprise.connections"]`
+- **Description:** Bitbucket Enterprise server connections for librarian tools
+
+---
+
+### experimental.agentMode
+
+- **Type:** string
+- **Default:** `"smart"` (via `in4()` function which returns `"smart"` as default)
+- **Used at:** CLI option `--mode`, mapped to `experimental.agentMode`
+- **Description:** Agent execution mode. Known values: "smart", "large", "deep", "rush", "free"
+
+---
+
+## Deprecated / Removed Settings
+
+### amp.model.sonnet (DEPRECATED)
+
+- **Status:** Deprecated in VS Code extension
+- **Deprecation message:** "This setting has been removed. Use large mode instead: set amp.experimental.agentMode to 'large'. See https://ampcode.com/news/large-mode"
+
+---
+
+### amp.tab.enabled (REMOVED)
+
+- **Status:** Completely removed from this version
+- **Was in previous version:** Yes
+
+---
+
+### amp.todos.enabled (REMOVED)
+
+- **Status:** Completely removed from this version
+- **Was in previous version:** Yes
+
+---
+
+### amp.debug.httpLogging (REMOVED)
+
+- **Status:** Completely removed from this version
+- **Was in previous version:** Yes
+
+---
+
+### amp.openrouter.apiKey (REMOVED from registry)
+
+- **Status:** No longer in the settings registry as a formal setting
+- **Still accessible:** Via `settings["openrouter.apiKey"]` at runtime and `OPENROUTER_API_KEY` env var
+- **Was in previous version:** Yes (as a formal registry entry)
+
+---
+
+### amp.internal.scaffoldCustomizationFile (REMOVED from registry)
+
+- **Status:** No longer in the main settings registry z86
+- **Still accessible:** Via `settings["internal.scaffoldCustomizationFile"]` at runtime
 
 ---
 
 ## Environment Variables
 
-Environment variables can configure the CLI without modifying the settings file. They take precedence over file-based settings.
+### AMP_API_KEY
 
-### Documented Environment Variables
-
-These are documented in CLI help output (`amp --help`) and official documentation.
-
-#### `AMP_API_KEY`
-
-**Type:** String  
-**Source:** main.js:5678-5685 (help), 6426-6443 (login/logout)  
-
-**Description:** API key for Amp authentication.
-
-**Example:**
-```bash
-export AMP_API_KEY=sk-amp-xxxxx
-```
-
-**Notes:**
-- Required for all API requests
-- Obtained via `amp login` command
-- Stored securely after login (or in file if native storage disabled)
+- **Description:** Access token for Amp (see https://ampcode.com/settings)
+- **Usage:** Used for authentication; if set, `amp login` will store it automatically
 
 ---
 
-#### `AMP_URL`
+### AMP_URL
 
-**Type:** String (URL)  
-**Default:** `https://ampcode.com`  
-**Source:** main.js:5678-5685, 6441-6447  
-
-**Description:** Override Amp server URL.
-
-**Example:**
-```bash
-export AMP_URL=https://custom-amp-server.company.com
-```
-
-**Notes:**
-- Overrides `amp.url` setting
-- Set during login and persisted to settings
-- See [endpoints.md](./endpoints.md) for endpoint details
+- **Description:** URL for the Amp service (default is https://ampcode.com)
+- **Usage:** Overrides the `amp.url` setting; checked during logout to decide whether to delete settings
 
 ---
 
-#### `AMP_LOG_LEVEL`
+### AMP_LOG_LEVEL
 
-**Type:** String enum: `"error"` | `"warn"` | `"info"` | `"debug"` | `"trace"`  
-**Default:** `"info"`  
-**Source:** main.js:5678-5685, 5600-5610 (logging init)  
-
-**Description:** Set CLI log level.
-
-**Example:**
-```bash
-export AMP_LOG_LEVEL=debug
-```
+- **Description:** Set log level (can also use --log-level CLI flag)
 
 ---
 
-#### `AMP_LOG_FILE`
+### AMP_LOG_FILE
 
-**Type:** String (file path)  
-**Default:** `~/.amp/amp.log`  
-**Source:** main.js:5678-5685  
-
-**Description:** Path to CLI log file.
-
-**Example:**
-```bash
-export AMP_LOG_FILE=/var/log/amp/cli.log
-```
+- **Description:** Set log file location (can also use --log-file CLI flag)
 
 ---
 
-#### `AMP_SETTINGS_FILE`
+### AMP_SETTINGS_FILE
 
-**Type:** String (file path)  
-**Default:** `~/.amp/settings.json`  
-**Source:** main.js:5678-5685, 5631-5653  
-
-**Description:** Path to settings JSON/JSONC file.
-
-**Example:**
-```bash
-export AMP_SETTINGS_FILE=/etc/amp/settings.json
-```
+- **Description:** Set settings file path (can also use --settings-file; default is the standard settings path)
 
 ---
 
-#### Standard Node.js Variables
+### AMP_HOME
 
-**`HTTP_PROXY` / `HTTPS_PROXY`**
-
-**Type:** String (URL)  
-**Description:** HTTP/HTTPS proxy for network requests.
-
-**Example:**
-```bash
-export HTTPS_PROXY=http://proxy.company.com:8080
-```
+- **Description:** Custom home directory for Amp installation
+- **Default:** `~/.amp`
+- **Usage:** When set, installation scripts use `$AMP_HOME/bin/amp`. If custom path differs from `~/.amp`, skips installation of `~/.local/bin/amp` (testing mode).
 
 ---
 
-**`NODE_EXTRA_CA_CERTS`**
+### AMP_VERSION
 
-**Type:** String (file path)  
-**Description:** Additional CA certificates for SSL/TLS validation.
-
-**Example:**
-```bash
-export NODE_EXTRA_CA_CERTS=/etc/ssl/certs/corporate-ca.pem
-```
-
-**Notes:**
-- Required for corporate proxies with custom SSL certificates
+- **Description:** Override the version string for Amp
+- **Usage:** If set, returns this value instead of fetching from npm registry
 
 ---
 
-### Undocumented Environment Variables
+### AMP_SKIP_UPDATE_CHECK
 
-These are found in the code but not officially documented.
-
-#### `AMP_CLI_STDOUT_DEBUG`
-
-**Type:** Boolean (any value enables)  
-**Source:** main.js:5600-5610 (logger setup)  
-
-**Description:** Emit logs to console (stdout) in addition to log file.
-
-**Example:**
-```bash
-export AMP_CLI_STDOUT_DEBUG=1
-amp "Test message"  # Logs appear in terminal
-```
+- **Description:** Disable update checking when set to "1"
+- **Usage:** Skips all update checks; `amp update` warns user that this env var is set
 
 ---
 
-#### `AMP_DEBUG`
+### AMP_TEST_UPDATE_STATUS
 
-**Type:** Boolean (any value enables)  
-**Source:** main.js:5601 (error handling path)  
-
-**Description:** Enable extra debugging features and error detail.
-
-**Example:**
-```bash
-export AMP_DEBUG=1
-```
+- **Description:** Fake update status for testing purposes
+- **Usage:** Emits a fake update status after 500ms delay
 
 ---
 
-#### `AMP_SKIP_UPDATE_CHECK`
+### AMP_DEBUG
 
-**Type:** Boolean (any value enables)  
-**Source:** main.js:5757-5765 (update service), 6449-6456  
-
-**Description:** Disable automatic update checks.
-
-**Example:**
-```bash
-export AMP_SKIP_UPDATE_CHECK=1
-```
-
-**Notes:**
-- Overrides `amp.updates.mode` setting
-- Useful for air-gapped or controlled environments
+- **Description:** Enable debug mode
+- **Usage:** When set (and not "0"), enables debug mode. When "1", shows detailed error logs and stack traces.
 
 ---
 
-#### `AMP_HOME`
+### AMP_CLI_STDOUT_DEBUG
 
-**Type:** String (directory path)  
-**Default:** `~/.amp`  
-**Source:** main.js:5726-5746, 5748-5757  
-
-**Description:** Override Amp installation/bootstrap directory.
-
-**Example:**
-```bash
-export AMP_HOME=/opt/amp
-```
-
-**Notes:**
-- Changes where CLI stores data, settings, and logs
-- Affects installation paths
+- **Description:** Enable debug-level console logging
+- **Usage:** When set to "true", adds a Console transport at debug level to Winston logger
 
 ---
 
-#### `AMP_VERSION`
+### AMP_ENABLE_TRACING
 
-**Type:** String (version number)  
-**Source:** main.js:5751-5757 (W79)  
-
-**Description:** Target version for bootstrap/update.
-
-**Example:**
-```bash
-export AMP_VERSION=0.0.1760000000
-```
-
-**Notes:**
-- Used during update process
-- Pins to specific version
-- Development/testing feature
+- **Description:** Enable OpenTelemetry tracing
+- **Usage:** When set, switches from AlwaysOffSampler to AlwaysOnSampler for OTEL tracing
 
 ---
 
-#### `AMP_TEST_UPDATE_STATUS`
+### AMP_HEADLESS_OAUTH
 
-**Type:** String  
-**Source:** main.js:5750-5760  
-
-**Description:** Force specific update status for testing.
-
-**Example:**
-```bash
-export AMP_TEST_UPDATE_STATUS=available
-```
-
-**Notes:**
-- Development/testing only
-- Forces update UI state
+- **Description:** Enable headless OAuth flow
+- **Usage:** When "1" or "true", forces headless OAuth mode (no browser-based auth)
 
 ---
 
-#### `OPENROUTER_API_KEY`
+### AMP_INSPECTOR_ENABLED
 
-**Type:** String  
-**Source:** OpenRouter configuration references  
-
-**Description:** API key for OpenRouter (alternative to setting).
-
-**Example:**
-```bash
-export OPENROUTER_API_KEY=sk-or-xxxxx
-```
-
-**Notes:**
-- Alternative to `amp.openrouter.apiKey` setting
-- Required for OpenRouter models
-- See [endpoints.md](./endpoints.md) for OpenRouter details
+- **Description:** Enable the inspector
+- **Usage:** Set to "1" when inspector mode is active
 
 ---
 
-#### `AMP_TOOLBOX` / `TOOLBOX_ACTION`
+### AMP_RIPGREP_PATH
 
-**Type:** String  
-**Source:** Code references to JetBrains integration  
-
-**Description:** JetBrains Toolbox integration environment variables.
-
-**Notes:**
-- Used for JetBrains IDE integration protocol
-- Internal integration mechanism
+- **Description:** Custom path to ripgrep binary
+- **Usage:** Overrides the default ripgrep detection (system rg or bundled)
 
 ---
 
-#### `AMP_PWD`
+### AMP_SDK_VERSION
 
-**Type:** String (directory path)  
-**Source:** main.js:6421-6422  
-
-**Description:** Override working directory on CLI launch.
-
-**Example:**
-```bash
-export AMP_PWD=/path/to/project
-amp "List files"
-```
-
-**Notes:**
-- CLI changes to this directory on startup
-- Affects relative file paths in commands
+- **Description:** SDK version identifier
+- **Usage:** Identifies the client as "AmpSDK" type when set
 
 ---
 
-## Configuration Examples
+### AMP_WORKER_URL
 
-### Minimal Configuration
-
-```json
-{
-  "amp.notifications.enabled": true,
-  "amp.git.commit.coauthor.enabled": true
-}
-```
+- **Description:** URL for the Cloudflare Worker used in agent loop operations
+- **Usage:** Passed to agent loop for add-message and headless operations
 
 ---
 
-### Advanced Configuration
+### AMP_PWD
 
-```json
-{
-  "amp.url": "https://ampcode.com",
-  "amp.notifications.enabled": true,
-  "amp.notifications.system.enabled": true,
-  "amp.anthropic.thinking.enabled": true,
-  "amp.anthropic.interleavedThinking.enabled": false,
-  "amp.git.commit.ampThread.enabled": true,
-  "amp.git.commit.coauthor.enabled": true,
-  "amp.todos.enabled": true,
-  "amp.tools.disable": ["browser_navigate"],
-  "amp.tools.stopTimeout": 600,
-  "amp.terminal.commands.nodeSpawn.loadProfile": "daily",
-  "amp.updates.mode": "warn",
-  "amp.permissions": [
-    {
-      "tool": "Bash",
-      "action": "ask",
-      "reason": "Confirm shell commands for security"
-    },
-    {
-      "tool": "edit_file",
-      "action": "allow"
-    }
-  ],
-  "amp.mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": [
-        "@modelcontextprotocol/server-filesystem",
-        "/home/user/projects"
-      ]
-    }
-  }
-}
-```
+- **Description:** Override the working directory
+- **Usage:** If set, `process.chdir()` is called with this path at startup, then the variable is deleted
 
 ---
 
-### OpenRouter Model Usage
+### AMP_TOOLBOX
 
-```json
-{
-  "amp.openrouter.apiKey": "sk-or-xxxxx"
-}
-```
-
-Or via environment:
-```bash
-export OPENROUTER_API_KEY=sk-or-xxxxx
-amp --model kimi/kimi-k2 "Analyze this code"
-```
+- **Description:** Path(s) to toolbox script directories
+- **Usage:** Colon-separated list of absolute paths. Must be absolute paths only. Overrides the `amp.toolbox.path` setting.
 
 ---
 
-### Native Secrets Storage
+### AMP_RESUME_OTHER_USER_THREADS_INSECURE
 
-```json
-{
-  "amp.experimental.cli.nativeSecretsStorage.enabled": true
-}
-```
-
-**Benefits:**
-- More secure than file-based storage
-- Integrates with OS keychain/credential manager
-- Encrypted at rest by OS
-
-**Supported Platforms:**
-- macOS: Keychain
-- Windows: Credential Manager
-- Linux: libsecret (requires D-Bus secret service)
+- **Description:** Bypass thread ownership check
+- **Usage:** When "1", allows resuming threads created by a different user (security bypass)
 
 ---
 
-### Permission Configuration
+### AMP_EDITOR
 
-```json
-{
-  "amp.permissions": [
-    {
-      "tool": "all",
-      "action": "ask",
-      "reason": "Default: ask for all tools"
-    },
-    {
-      "tool": "Read",
-      "action": "allow",
-      "reason": "Reading files is safe"
-    },
-    {
-      "tool": "Bash",
-      "action": "ask",
-      "reason": "Always confirm shell commands"
-    },
-    {
-      "tool": "edit_file",
-      "action": "allow",
-      "reason": "File edits are reversible via git"
-    }
-  ]
-}
-```
-
-**Permission Actions:**
-- `allow` - Execute without prompting
-- `ask` - Prompt user for approval
-- `reject` - Never allow execution
-- `delegate` - Delegate to another agent/system
+- **Description:** Preferred editor for Amp
+- **Usage:** Checked first in the editor resolution chain: AMP_EDITOR -> EDITOR -> VISUAL -> vi -> nano -> edit
 
 ---
 
-### MCP Server Setup
+### AMP_SHELL_ENV_MARKER
 
-```json
-{
-  "amp.mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": [
-        "@modelcontextprotocol/server-filesystem",
-        "/home/user/projects",
-        "/home/user/documents"
-      ]
-    },
-    "database": {
-      "command": "node",
-      "args": ["/usr/local/bin/mcp-postgres-server.js"],
-      "env": {
-        "DB_HOST": "localhost",
-        "DB_PORT": "5432",
-        "DB_NAME": "myapp",
-        "DB_USER": "user",
-        "DB_PASSWORD": "secret"
-      }
-    },
-    "custom-api": {
-      "command": "python3",
-      "args": ["/path/to/custom-mcp-server.py"],
-      "env": {
-        "API_KEY": "xxxxx"
-      }
-    }
-  }
-}
-```
-
-**Notes:**
-- Each server runs as a separate child process
-- Servers communicate via stdio (MCP protocol)
-- Environment variables can pass configuration to servers
-- Servers expose additional tools to the agent
+- **Description:** Internal marker used during shell environment loading
+- **Usage:** Used to detect when login shell environment has been fully loaded
 
 ---
 
-### Debug Configuration
+### AMP_CURRENT_THREAD_ID
 
-```json
-{
-  "amp.debug.httpLogging": true
-}
-```
-
-Plus environment:
-```bash
-export AMP_LOG_LEVEL=debug
-export AMP_CLI_STDOUT_DEBUG=1
-export AMP_DEBUG=1
-
-amp "Test request"
-```
-
-**Output:**
-- Detailed HTTP request/response logs
-- Debug-level application logs
-- Logs appear in terminal and log file
+- **Description:** Current thread ID (set for toolbox scripts)
+- **Usage:** Set in the environment for toolbox action execution alongside AGENT_THREAD_ID
 
 ---
 
-## Notes on Settings
+### Other Relevant Environment Variables
 
-### Visibility Flags
+#### OPENROUTER_API_KEY
 
-Settings in the code registry have visibility flags:
-
-- **Visible** (`visible: true`) - Intended for user configuration
-- **Hidden** (`visible: false`) - Internal, but functional if set
-- **Experimental** - May change or be removed in future versions
-- **Deprecated** - Still functional but marked for removal
-
-### Setting Scopes
-
-Settings apply to different contexts:
-
-- **CLI Only** - Only used by command-line interface
-- **Editor Only** - Only used by VS Code extension
-- **Both** - Used by both CLI and editor
-
-**Editor-only settings** (not applicable to CLI):
-- `amp.tab.enabled`
-- `amp.ui.zoomLevel`
-- `amp.debugLogs`
-
-### Migration Warnings
-
-**No deprecated settings with migration paths** were found in this version. The CLI appears to maintain backward compatibility without explicit deprecation warnings.
-
-CLI flags (not settings) may have deprecation notices:
-- `--format` flag (deprecated)
-- `--interactive` flag (deprecated)
-
-### Precedence Order
-
-Configuration is loaded with the following precedence (highest to lowest):
-
-1. **Environment variables** (e.g., `AMP_URL`, `AMP_API_KEY`)
-2. **CLI flags** (e.g., `--model`, `--no-stream`)
-3. **Settings file** (`~/.amp/settings.json` or `AMP_SETTINGS_FILE`)
-4. **Default values** (from code registry)
-
-### Settings Validation
-
-The CLI validates settings on load:
-- Type checking (boolean, string, number, object, array)
-- Enum validation (for settings with fixed values)
-- Path validation (for file/directory settings)
-
-Invalid settings will:
-- Log a warning
-- Fall back to default value
-- Not block CLI execution (unless critical like API key)
+- **Description:** OpenRouter API key
+- **Usage:** Fallback for `amp.openrouter.apiKey` setting. Used when connecting to OpenRouter-hosted models.
 
 ---
 
-## Verification Status
+#### NO_ANIMATION / NO_ANIMATIONS
 
-This documentation was created through automated extraction and Oracle-assisted analysis. However, **not all settings could be verified** to actually work in the runtime code.
-
-### Verification Categories
-
-- ✅ **VERIFIED** - Confirmed to work via runtime code analysis (73% of settings)
-- ⚠️ **UNVERIFIED** - In registry but runtime usage not found (16% of settings)
-- 🔴 **DISCREPANCY** - Registry default ≠ runtime default (4% of settings)
-- ❌ **HARDCODED** - Setting may be ignored by runtime (4% of settings)
-
-### Critical Issues Found
-
-1. **`amp.anthropic.thinking.enabled`** 🔴
-   - Registry default: `false`
-   - **Actual runtime default: `true`**
-   - Impact: Thinking is ON by default, not off
-   - Resolution: Manual is correct, registry is misleading
-
-2. **`amp.todos.enabled`** ❌
-   - Setting exists but runtime may hardcode `true`
-   - Impact: Setting may not disable todos
-   - Status: Needs manual testing
-
-### Unverified Settings (Require Testing)
-
-These settings exist but couldn't be verified in runtime code:
-- `amp.notifications.enabled` (may be overridden by CLI flag)
-- `amp.tools.disable`
-- `amp.tools.stopTimeout` / `amp.tools.inactivityTimeout`
-- `amp.debug.httpLogging`
-
-### Detailed Verification Report
-
-For complete verification details including:
-- Line numbers for all runtime usage
-- Code snippets showing how settings are read
-- Testing methodology for unverified settings
-- Known issues and workarounds
-
-**See:** [Settings Verification Status](./settings-verification-status.md)
-
-### Recommendations
-
-1. **Use with confidence (Verified):**
-   - All documented settings except those marked with warnings
-   - All core settings (`amp.url`, `amp.permissions`, etc.)
-   - Git integration settings
-   - Most environment variables
-
-2. **Test before production (Unverified):**
-   - Any setting marked with ⚠️ warning in this document
-   - Settings not explicitly verified in the verification status doc
-
-3. **Report issues:**
-   - If a setting doesn't work as documented, check verification status
-   - File issue with Amp team if verified setting doesn't work
-   - Contribute testing results for unverified settings
+- **Description:** Disable terminal animations
+- **Usage:** When "1", disables all terminal animations (equivalent to `amp.terminal.animation: false`)
 
 ---
 
-## Related Resources
+#### CLAUDECODE / AGENT
 
-- [Amp Manual - Configuration](https://ampcode.com/manual#configuration) - Official documentation
-- [Settings Verification Status](./settings-verification-status.md) - Detailed verification report
-- [API Endpoints Reference](./endpoints.md) - HTTP endpoint documentation
-- [MCP Specification](https://modelcontextprotocol.io) - Model Context Protocol
-- [Agent Modes Documentation](https://ampcode.com/manual#agent-modes) - Agent mode details
+- **Description:** Set to "1" and "amp" respectively for toolbox script execution
+- **Usage:** Identifies the caller as Amp to toolbox scripts
 
 ---
 
-## Appendix: Complete Settings Registry (CQ6)
+#### TOOLBOX_ACTION
 
-The settings registry object (CQ6) at main.js:5653 contains all settings with their metadata. Below is a summary of all registry entries:
+- **Description:** Toolbox protocol action type
+- **Values:** "describe" (get tool metadata) or "execute" (run the tool)
 
-| Setting Key | Type | Default | Visible | Source Line |
-|-------------|------|---------|---------|-------------|
-| `url` | string | `"https://ampcode.com"` | false | 5653 |
-| `anthropic.thinking.enabled` | boolean | `true` (runtime) | false | 5653, 1225 |
-| `anthropic.interleavedThinking.enabled` | boolean | `false` | false | 5653 |
-| `anthropic.temperature` | number | `1` | false | 5653 |
-| `notifications.enabled` | boolean | `true` | true | 5653 |
-| `notifications.system.enabled` | boolean | `true` | true | 5653 |
-| `todos.enabled` | boolean | `true` | false | 5653 |
-| `mcpServers` | object | (example) | true | 5653 |
-| `tools.disable` | array | `["browser_navigate", "builtin:edit_file"]` | true | 5653 |
-| `tools.inactivityTimeout` | number | `300` | false | 5653 |
+---
 
-**Notes:**
-- `Visible: false` = Hidden setting (not shown in UI/docs)
-- `Visible: true` = Public setting (intended for users)
-- Other settings are loaded/used outside the registry
-- **Important:** Registry defaults may differ from runtime defaults. For example, `anthropic.thinking.enabled` has a registry default of `false` but a runtime default of `true` (via `?? true` fallback when unset)
+## Changes from Previous Version (0.0.1766908883-g25743d)
+
+### New Settings Added to CLI Registry (z86)
+
+| Setting | Type | Default | Visible |
+|---------|------|---------|---------|
+| `amp.workerUrl` | string | `"http://localhost:8787"` | hidden |
+| `amp.anthropic.effort` | string | `"high"` | hidden |
+| `amp.internal.deepReasoningEffort` | string | `"medium"` | hidden |
+| `amp.gemini.thinkingLevel` | string/undefined | `undefined` | hidden |
+| `amp.agent.skipTitleGenerationIfMessageContains` | array | `[]` | hidden |
+| `amp.tools.enable` | array/undefined | `undefined` | visible |
+| `amp.tools.stopTimeout` | number | `300` | hidden |
+| `amp.network.timeout` | number | `30` | visible |
+| `amp.guardedFiles.allowlist` | array | `[]` | visible |
+| `amp.submitOnEnter` | boolean | `true` | hidden |
+| `amp.terminal.animation` | boolean | `true` | visible |
+| `amp.terminal.theme` | string | `"terminal"` | visible |
+| `amp.hooks` | array | `[]` | hidden |
+| `amp.anthropic.provider` | string | `"anthropic"` | hidden |
+| `amp.experimental.tools` | array | `[]` | hidden |
+| `amp.experimental.modes` | array | `[]` | visible |
+| `amp.fuzzy.alwaysIncludePaths` | array | `[]` | visible |
+| `amp.systemPrompt` | string/undefined | `undefined` | hidden |
+| `amp.skills.path` | string/undefined | `undefined` | visible |
+| `amp.toolbox.path` | string/undefined | `undefined` | visible |
+| `amp.proxy` | string/undefined | `undefined` | visible |
+| `amp.showCosts` | boolean | `true` | visible |
+
+### New VS Code Extension Settings
+
+| Setting | Type | Default |
+|---------|------|---------|
+| `amp.workerUrl` | string | - |
+| `amp.experimental.compaction` | boolean/number | `false` |
+| `amp.experimental.promptAutocomplete.verboseLogging` | boolean | `false` |
+| `amp.experimental.reviewSubagent` | boolean | `false` |
+| `amp.debug.logReview` | boolean | `false` |
+| `amp.review.separatePanel` | boolean | `false` |
+| `amp.mcpPermissions` | array | `[]` |
+| `amp.mcpTrustedServers` | array | - |
+| `amp.workspaces` | array | - |
+| `amp.bitbucket.enterprise.connections` | array | `[]` |
+| `amp.tools.stopTimeout` | number | `300` |
+
+### New Runtime-Only Settings
+
+| Setting | Type | Default |
+|---------|------|---------|
+| `internal.deepReasoningEffort` | string | `"medium"` |
+| `internal.fireworks.directRouting` | boolean | - |
+| `internal.kimi.reasoning` | string | `"medium"` |
+| `internal.cli.logViewer` | string | - |
+| `experimental.autoSnapshot` | boolean | `false` |
+| `experimental.cli.commandTelemetry.enabled` | boolean | `false` |
+| `agent.showUsageDebugInfo` | boolean | `false` |
+
+### New Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `AMP_ENABLE_TRACING` | Enable OpenTelemetry tracing |
+| `AMP_HEADLESS_OAUTH` | Enable headless OAuth flow |
+| `AMP_INSPECTOR_ENABLED` | Enable inspector mode |
+| `AMP_RIPGREP_PATH` | Custom ripgrep binary path |
+| `AMP_SDK_VERSION` | SDK version identifier |
+| `AMP_WORKER_URL` | Cloudflare Worker URL |
+| `AMP_RESUME_OTHER_USER_THREADS_INSECURE` | Bypass thread ownership check |
+| `AMP_EDITOR` | Preferred editor |
+| `AMP_SHELL_ENV_MARKER` | Internal shell env loading marker |
+| `AMP_CURRENT_THREAD_ID` | Current thread ID for toolbox scripts |
+
+### Settings Removed
+
+| Setting | Notes |
+|---------|-------|
+| `amp.tab.enabled` | Completely removed |
+| `amp.todos.enabled` | Completely removed |
+| `amp.debug.httpLogging` | Completely removed |
+| `amp.openrouter.apiKey` | Removed from registry; still accessible at runtime |
+| `amp.internal.scaffoldCustomizationFile` | Removed from registry; still accessible at runtime |
+
+### Settings with Changed Defaults or Behavior
+
+| Setting | Previous Default | Current Default | Notes |
+|---------|-----------------|-----------------|-------|
+| `amp.tools.disable` | (varied) | `["browser_navigate", "builtin:edit_file"]` | Now includes `builtin:edit_file` by default |
+| `amp.experimental.agentMode` | (was in registry) | Not in registry; runtime default is `"smart"` | Accessed via `--mode` CLI flag; values: smart, large, deep, rush, free |
+
+---
+
+## Summary Statistics
+
+- **Total CLI Registry Settings (z86):** 42
+- **Total VS Code Extension Settings:** 35
+- **Total Runtime-Only Settings:** 7
+- **Total Environment Variables (AMP_*):** 21
+- **Total Other Relevant Env Vars:** 3 (OPENROUTER_API_KEY, NO_ANIMATION, TOOLBOX_ACTION)
+- **Deprecated Settings:** 1 (amp.model.sonnet)
+- **Removed Settings (vs previous):** 5
+- **New Settings (vs previous):** 22+ in CLI registry, 11+ in VS Code, 7 runtime-only, 10 new env vars
 
 ---
 
 **Generation Details:**
-- CLI Version: 0.0.1761153678-gfa55cf
+- CLI Version: 0.0.1770366910-g1852ef
 - Bundle: `node_modules/@sourcegraph/amp/dist/main.js`
-- Analysis Method: Oracle-assisted extraction with manual cross-reference
-- Manual URL: https://ampcode.com/manual#configuration
-- Verification: Settings verified against code (main.js:5653, CQ6) and manual
-- Last Updated: 2025-01-21
+- Settings Registry Variable: `z86` (line 7713)
+- Analysis Method: Extraction from minified main.js bundle
+- Last Updated: 2026-02-06
 
 ---
 
 ## Version History
+
+### v0.0.1770366910-g1852ef (2026-02-06)
+- Updated to latest version
+- 22 new CLI registry settings added
+- 11 new VS Code extension settings added
+- 7 new runtime-only settings documented
+- 10 new environment variables documented
+- 5 settings removed from previous version
+- Settings registry variable changed from CQ6 to z86
 
 ### v0.0.1761153678-gfa55cf (2025-01-21)
 - Initial extraction

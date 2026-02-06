@@ -4,7 +4,7 @@ This repository contains comprehensive documentation extracted from the Amp CLI 
 
 ## What is Amp?
 
-Amp is a powerful AI coding agent built by Sourcegraph that helps with software engineering tasks. The Amp CLI provides an intelligent coding assistant powered by various AI models (Claude, GPT-5, Gemini, Grok, and more) with specialized agents for different types of work.
+Amp is a powerful AI coding agent built by Sourcegraph that helps with software engineering tasks. The Amp CLI provides an intelligent coding assistant powered by various AI models (Claude, GPT-5.2, Gemini 3, Grok, Kimi K2.5, and more) with specialized agents for different types of work.
 
 ## What's in This Repository?
 
@@ -25,9 +25,9 @@ This repository contains detailed technical documentation extracted from analyzi
 ### Agents & Tools
 
 - [**amp-extractions/agents/librarian-system-prompt.md**](amp-extractions/agents/librarian-system-prompt.md) - System prompt for the Librarian agent, a specialized codebase understanding agent for multi-repository analysis
-- [**amp-extractions/agents/oracle-system-prompt.md**](amp-extractions/agents/oracle-system-prompt.md) - System prompt for the Oracle agent, an expert advisor using GPT-5 for code reviews, architecture decisions, and complex debugging
+- [**amp-extractions/agents/oracle-system-prompt.md**](amp-extractions/agents/oracle-system-prompt.md) - System prompt for the Oracle agent, an expert advisor using GPT-5.2 for code reviews, architecture decisions, and complex debugging
 - [**amp-extractions/agents/smart-system-prompt.md**](amp-extractions/agents/smart-system-prompt.md) - System prompt for the Smart agent (main/default agent), the primary coding agent that handles most user interactions
-- [**amp-extractions/agents/agent-tools.md**](amp-extractions/agents/agent-tools.md) - Complete tool definitions and implementations for Librarian and Oracle agents, including all 7 GitHub tools and specialized capabilities
+- [**amp-extractions/agents/agent-tools.md**](amp-extractions/agents/agent-tools.md) - Complete tool definitions and implementations covering all 50 tools available to agents, including GitHub tools, code editing, search, subagents, and specialized capabilities
 
 ## Use Cases
 
@@ -59,10 +59,10 @@ This documentation is valuable for:
 
 ## Source Information
 
-**Generated from**: Amp CLI v0.0.1761076893-ge5520f source code analysis  
-**Primary source**: `node_modules/@sourcegraph/amp/dist/main.js` (analyzed artifact, not included in this repository)  
-**Verification**: Oracle analysis and manual extraction  
-**Last updated**: 2025-01-20
+**Generated from**: Amp CLI v0.0.1770366910-g1852ef source code analysis
+**Primary source**: `node_modules/@sourcegraph/amp/dist/main.js` (analyzed artifact, not included in this repository)
+**Verification**: Oracle analysis and manual extraction
+**Last updated**: 2026-02-06
 
 ## Related Resources
 
