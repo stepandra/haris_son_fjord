@@ -1,81 +1,122 @@
-# AMP CLI Settings Verification Status (CODEX)
+# AMP CLI Settings Verification Status (CODEX, Audited)
 
 - Source bundle: `npm-packages/0.0.1770366910-g1852ef/node_modules/@sourcegraph/amp/dist/main.js`
 - Build version: `0.0.1770366910-g1852ef`
-- Method: static schema extraction + static runtime-read scan (`settings["..."]`, `.get("...")`)
-- Generated at: `2026-02-06T09:30:38.714Z`
+- Generated: `2026-02-06T10:15:24.179Z`
+- Extraction artifact: `amp-extractions/meta/extraction-artifacts_CODEX.json`
 
-## Status Model
-- `SCHEMA+READ`: present in the schema block and read at least once in code.
-- `SCHEMA-ONLY`: present in schema block but no direct static read found.
-- `READ-ONLY`: read in code but not present in schema block.
+## Classification Model
+- `CLI-SCHEMA+READ`: key exists in `z86` and has at least one static runtime read.
+- `CLI-SCHEMA-ONLY`: key exists in `z86` with no static runtime read hit.
+- `VSCODE-SCHEMA+READ`: key exists in VS Code `amp.*` schema and is read by direct `amp.*` key.
+- `VSCODE-SCHEMA-ONLY`: key exists in VS Code `amp.*` schema with no direct `amp.*` static read hit.
+- `RUNTIME-ONLY-CANDIDATE`: likely Amp setting key read at runtime but absent from `z86`.
 
 ## Totals
-- `SCHEMA+READ`: 15
-- `SCHEMA-ONLY`: 21
-- `READ-ONLY`: 20
+- `CLI-SCHEMA+READ`: **27**
+- `CLI-SCHEMA-ONLY`: **13**
+- `VSCODE-SCHEMA+READ`: **0**
+- `VSCODE-SCHEMA-ONLY`: **36**
+- `RUNTIME-ONLY-CANDIDATE`: **12**
 
-## SCHEMA+READ (15)
-- `amp.anthropic.effort`
-- `amp.anthropic.thinking.enabled`
-- `amp.bitbucket.enterprise.connections`
-- `amp.experimental.compaction`
-- `amp.fuzzy.alwaysIncludePaths`
-- `amp.git.commit.ampThread.enabled`
-- `amp.git.commit.coauthor.enabled`
-- `amp.guardedFiles.allowlist`
-- `amp.network.timeout`
-- `amp.notifications.enabled`
-- `amp.terminal.commands.nodeSpawn.loadProfile`
-- `amp.toolbox.path`
-- `amp.tools.disable`
-- `amp.tools.inactivityTimeout`
-- `amp.tools.stopTimeout`
+## CLI-SCHEMA+READ
+- `amp.url` (reads: 3)
+- `amp.anthropic.thinking.enabled` (reads: 2)
+- `amp.anthropic.temperature` (reads: 2)
+- `amp.anthropic.effort` (reads: 1)
+- `amp.internal.deepReasoningEffort` (reads: 5)
+- `amp.gemini.thinkingLevel` (reads: 1)
+- `amp.notifications.enabled` (reads: 1)
+- `amp.notifications.system.enabled` (reads: 1)
+- `amp.mcpServers` (reads: 6)
+- `amp.tools.disable` (reads: 1)
+- `amp.tools.inactivityTimeout` (reads: 1)
+- `amp.tools.stopTimeout` (reads: 2)
+- `amp.network.timeout` (reads: 1)
+- `amp.permissions` (reads: 6)
+- `amp.guardedFiles.allowlist` (reads: 1)
+- `amp.dangerouslyAllowAll` (reads: 4)
+- `amp.terminal.commands.nodeSpawn.loadProfile` (reads: 1)
+- `amp.terminal.animation` (reads: 1)
+- `amp.terminal.theme` (reads: 1)
+- `amp.hooks` (reads: 3)
+- `amp.experimental.cli.nativeSecretsStorage.enabled` (reads: 1)
+- `amp.fuzzy.alwaysIncludePaths` (reads: 1)
+- `amp.toolbox.path` (reads: 1)
+- `amp.git.commit.coauthor.enabled` (reads: 1)
+- `amp.git.commit.ampThread.enabled` (reads: 1)
+- `amp.jetbrains.skipInstall` (reads: 1)
+- `amp.updates.mode` (reads: 1)
 
-## SCHEMA-ONLY (21)
-- `amp.dangerouslyAllowAll`
-- `amp.debug.logReview`
-- `amp.debugLogs`
-- `amp.experimental.modes`
-- `amp.experimental.promptAutocomplete.verboseLogging`
-- `amp.experimental.reviewSubagent`
-- `amp.experimental.tools`
-- `amp.hooks`
-- `amp.mcpPermissions`
-- `amp.mcpServers`
-- `amp.mcpTrustedServers`
-- `amp.model.sonnet`
-- `amp.permissions`
-- `amp.review.separatePanel`
-- `amp.showCosts`
-- `amp.skills.path`
-- `amp.submitOnEnter`
-- `amp.ui.zoomLevel`
-- `amp.url`
-- `amp.workerUrl`
-- `amp.workspaces`
+## CLI-SCHEMA-ONLY
+- `amp.workerUrl` (reads: 0)
+- `amp.anthropic.interleavedThinking.enabled` (reads: 0)
+- `amp.agent.skipTitleGenerationIfMessageContains` (reads: 0)
+- `amp.tools.enable` (reads: 0)
+- `amp.submitOnEnter` (reads: 0)
+- `amp.debugLogs` (reads: 0)
+- `amp.anthropic.provider` (reads: 0)
+- `amp.experimental.tools` (reads: 0)
+- `amp.experimental.modes` (reads: 0)
+- `amp.systemPrompt` (reads: 0)
+- `amp.skills.path` (reads: 0)
+- `amp.proxy` (reads: 0)
+- `amp.showCosts` (reads: 0)
 
-## READ-ONLY (20)
-- `amp.agent.showUsageDebugInfo`
-- `amp.agent.skipTitleGenerationIfMessageContains`
-- `amp.anthropic.temperature`
-- `amp.console.level`
-- `amp.console.lock`
-- `amp.experimental.autoSnapshot`
-- `amp.experimental.cli.commandTelemetry.enabled`
-- `amp.gemini.thinkingLevel`
-- `amp.internal.cli.logViewer`
-- `amp.internal.deepReasoningEffort`
-- `amp.internal.fireworks.directRouting`
-- `amp.internal.kimi.reasoning`
-- `amp.internal.scaffoldCustomizationFile`
-- `amp.jetbrains.skipInstall`
-- `amp.notifications.system.enabled`
-- `amp.openrouter.apiKey`
-- `amp.terminal.animation`
-- `amp.terminal.theme`
-- `amp.tools.enable`
-- `amp.updates.mode`
+## VSCODE-SCHEMA+READ
+- (none)
+
+## VSCODE-SCHEMA-ONLY
+- `amp.anthropic.effort` (reads: 0)
+- `amp.anthropic.thinking.enabled` (reads: 0)
+- `amp.bitbucket.enterprise.connections` (reads: 0)
+- `amp.dangerouslyAllowAll` (reads: 0)
+- `amp.debug.logReview` (reads: 0)
+- `amp.debugLogs` (reads: 0)
+- `amp.experimental.compaction` (reads: 0)
+- `amp.experimental.modes` (reads: 0)
+- `amp.experimental.promptAutocomplete.verboseLogging` (reads: 0)
+- `amp.experimental.reviewSubagent` (reads: 0)
+- `amp.experimental.tools` (reads: 0)
+- `amp.fuzzy.alwaysIncludePaths` (reads: 0)
+- `amp.git.commit.ampThread.enabled` (reads: 0)
+- `amp.git.commit.coauthor.enabled` (reads: 0)
+- `amp.guardedFiles.allowlist` (reads: 0)
+- `amp.hooks` (reads: 0)
+- `amp.mcpPermissions` (reads: 0)
+- `amp.mcpServers` (reads: 0)
+- `amp.mcpTrustedServers` (reads: 0)
+- `amp.model.sonnet` (reads: 0)
+- `amp.network.timeout` (reads: 0)
+- `amp.notifications.enabled` (reads: 0)
+- `amp.permissions` (reads: 0)
+- `amp.review.separatePanel` (reads: 0)
+- `amp.showCosts` (reads: 0)
+- `amp.skills.path` (reads: 0)
+- `amp.submitOnEnter` (reads: 0)
+- `amp.terminal.commands.nodeSpawn.loadProfile` (reads: 0)
+- `amp.toolbox.path` (reads: 0)
+- `amp.tools.disable` (reads: 0)
+- `amp.tools.inactivityTimeout` (reads: 0)
+- `amp.tools.stopTimeout` (reads: 0)
+- `amp.ui.zoomLevel` (reads: 0)
+- `amp.url` (reads: 0)
+- `amp.workerUrl` (reads: 0)
+- `amp.workspaces` (reads: 0)
+
+## RUNTIME-ONLY-CANDIDATE
+- `amp.agent.showUsageDebugInfo` (reads: 2)
+- `amp.bitbucket.enterprise.connections` (reads: 3)
+- `amp.console.level` (reads: 1)
+- `amp.console.lock` (reads: 1)
+- `amp.experimental.autoSnapshot` (reads: 3)
+- `amp.experimental.cli.commandTelemetry.enabled` (reads: 1)
+- `amp.experimental.compaction` (reads: 1)
+- `amp.internal.cli.logViewer` (reads: 1)
+- `amp.internal.fireworks.directRouting` (reads: 1)
+- `amp.internal.kimi.reasoning` (reads: 2)
+- `amp.internal.scaffoldCustomizationFile` (reads: 1)
+- `amp.openrouter.apiKey` (reads: 1)
 
 ## Caveat
-This classification is static analysis only. A key can still be active through indirect access patterns even if it appears in `SCHEMA-ONLY`.
+- This is static analysis evidence. Dynamic key construction and indirect config plumbing can hide real runtime usage.

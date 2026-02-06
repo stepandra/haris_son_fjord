@@ -1,29 +1,41 @@
-# Amp Extraction Refresh Summary (CODEX)
+# Amp Extraction Refresh Summary (CODEX, Audited Pass 2)
 
-- Previous docs in this repo were primarily pinned to Amp CLI `0.0.1761153678-gfa55cf`.
-- This refresh is pinned to Amp CLI `0.0.1770366910-g1852ef` (bundle timestamp `2026-02-06T08:40:14.971Z`).
-- Generated at: `2026-02-06T09:30:38.714Z`
+- Source build: `0.0.1770366910-g1852ef`
+- Source bundle: `npm-packages/0.0.1770366910-g1852ef/node_modules/@sourcegraph/amp/dist/main.js`
+- Generated from artifact at: `amp-extractions/meta/extraction-artifacts_CODEX.json`
 
-## New Files
+## Verified Counts
+- `z86` CLI settings keys: **40**
+- VS Code `amp.*` settings keys: **36**
+- Static tool-name list `sW0`: **45**
+- Parsed `spec:{name:...}` tool entries: **47**
+- Agent modes (`HL`): **6**
+- Subagent modes (`D5`): **6**
+- Model catalog (`D4`): **35**
+- Provider enum (`O4`): **10**
+- Provider proxy endpoints: **9**
+
+## Updated Documents
 - `amp-extractions/config/settings_CODEX.md`
 - `amp-extractions/config/settings-verification-status_CODEX.md`
 - `amp-extractions/config/testing-guide_CODEX.md`
 - `amp-extractions/config/endpoints_CODEX.md`
 - `amp-extractions/config/ERRATA_CODEX.md`
 - `amp-extractions/config/README_CODEX.md`
+- `amp-extractions/agents/agent-tools_CODEX.md`
 - `amp-extractions/agents/librarian-system-prompt_CODEX.md`
 - `amp-extractions/agents/oracle-system-prompt_CODEX.md`
 - `amp-extractions/agents/smart-system-prompt_CODEX.md`
-- `amp-extractions/agents/agent-tools_CODEX.md`
-- `amp-extractions/AUDIT_SUMMARY_CODEX.md`
+- `amp-extractions/meta/extraction-audit_CODEX.md`
 
-## Key Findings
-- Settings schema block now yields **36** entries (static extraction).
-- Runtime reads include **35** distinct dotted keys; **20** are outside the schema block.
-- OpenRouter is still direct (`https://openrouter.ai/api/v1`), while many other providers route through `/api/provider/*` paths on `amp.url`.
-- Librarian tool naming differs from older docs (`search_github` / `commit_search` / `diff` etc.), and Bitbucket Enterprise tools are first-class in this build.
-- Oracle invocation description now explicitly references GPT-5.2 reasoning model text in-bundle.
+## Key Corrections
+- Corrected settings count drift (`z86` is 40, not 42 in this build).
+- Corrected VS Code settings count drift (36 `amp.*` keys, not 35).
+- Corrected static tool-list framing (`sW0` has 45 names; dynamic sources can add more).
+- Replaced first-pass partial config docs with machine-generated artifact-backed docs.
 
-## Method
-- Static parsing of minified bundle (`dist/main.js`) using brace-aware extraction and focused schema/template decoding.
-- No reliance on historical line numbers from previous builds.
+## Reproduction
+```bash
+node amp-extractions/scripts/extract_bundle_codex.mjs
+node amp-extractions/scripts/generate_codex_docs.mjs
+```

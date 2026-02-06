@@ -1,13 +1,20 @@
-# AMP Config Docs Index (CODEX)
+# AMP Config Docs Index (CODEX, Audited)
 
-This index points to regenerated config research artifacts for Amp CLI `0.0.1770366910-g1852ef`.
+This directory contains artifact-backed configuration documentation for build `0.0.1770366910-g1852ef`.
 
-## Files
-- `settings_CODEX.md`: current schema extraction + runtime-read cross-check
-- `settings-verification-status_CODEX.md`: static status classification (`SCHEMA+READ`, `SCHEMA-ONLY`, `READ-ONLY`)
-- `testing-guide_CODEX.md`: manual verification procedures for ambiguous keys
-- `endpoints_CODEX.md`: provider, internal, threads, Bitbucket, and direct URL endpoint inventory
-- `ERRATA_CODEX.md`: key drift and corrections versus older extraction artifacts
+## Primary Docs
+- `settings_CODEX.md`: full `z86` + VS Code schema + runtime-read crosswalk.
+- `settings-verification-status_CODEX.md`: static evidence classification by schema/read status.
+- `testing-guide_CODEX.md`: manual validation workflow for ambiguous settings.
+- `endpoints_CODEX.md`: provider endpoints, model catalog, and API path inventory.
+- `ERRATA_CODEX.md`: corrected drift and audit notes.
 
-## Scope
-These `_CODEX.md` files are additive and do not overwrite historical extraction files in this repository.
+## Audit Artifacts
+- `../meta/extraction-artifacts_CODEX.json`
+- `../meta/extraction-audit_CODEX.md`
+
+## Reproduction
+```bash
+node amp-extractions/scripts/extract_bundle_codex.mjs
+node amp-extractions/scripts/generate_codex_docs.mjs
+```
