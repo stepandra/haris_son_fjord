@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const ARTIFACT_PATH = process.argv[2] || 'amp-extractions/meta/extraction-artifacts_CODEX.json';
+const ARTIFACT_PATH = process.argv[2] || 'amp-extractions/meta/extraction-artifacts.json';
 const artifact = JSON.parse(fs.readFileSync(ARTIFACT_PATH, 'utf8'));
 
 function ensureDir(filePath) {
@@ -53,11 +53,8 @@ function buildSettingsDoc() {
   const z86Keys = artifact.settings.z86Keys;
   const runtimeCounts = artifact.settings.runtimeReadCounts;
   const runtimeLikely = artifact.settings.runtimeLikelyAmpKeys;
-  const vscodeEntries = artifact.settings.vscodeEntries;
-  const vscodeKeys = artifact.settings.vscodeKeys;
 
   const z86Set = new Set(z86Keys);
-  const vscodeSet = new Set(vscodeKeys);
 
   const cliRows = z86Keys
     .slice()
@@ -76,23 +73,10 @@ function buildSettingsDoc() {
       ];
     });
 
-  const vscodeRows = vscodeKeys.map((k) => {
-    const e = vscodeEntries[k] || {};
-    const runtimeReads = runtimeCounts[k] || 0;
-    return [
-      code(k),
-      code(e.type ?? '(none)'),
-      code(e.default === undefined ? '(none)' : fmtValue(e.default)),
-      code(e.scope ?? '(none)'),
-      String(runtimeReads),
-      e.description || '',
-    ];
-  });
-
   const runtimeOnlyCandidates = runtimeLikely.filter((key) => {
     if (key.startsWith('amp.')) {
       const bare = key.slice(4);
-      return !z86Set.has(bare) && !vscodeSet.has(key);
+      return !z86Set.has(bare);
     }
     return !z86Set.has(key);
   });
@@ -104,70 +88,49 @@ function buildSettingsDoc() {
       code(normalized),
       String(runtimeCounts[key] || 0),
       z86Set.has(normalized) ? 'yes' : 'no',
-      vscodeSet.has(key) ? 'yes' : 'no',
     ];
   });
 
-  const z86NotInVscode = z86Keys
-    .filter((k) => !vscodeSet.has(`amp.${k}`))
-    .map((k) => `- ${code(`amp.${k}`)}`)
-    .join('\n');
-
-  const vscodeNotInZ86 = vscodeKeys
-    .filter((k) => !z86Set.has(k.slice(4)))
-    .map((k) => `- ${code(k)}`)
-    .join('\n');
-
   const envList = artifact.settings.envVarsAmpRelevant.map((v) => `- ${code(v)}`).join('\n');
+  const editorSchemaNote = artifact.anchors.vscodeProperties === null
+    ? '- No VS Code extension `contributes.configuration.properties` settings block was found in this CLI bundle.'
+    : `- Legacy VS Code extension settings block found at byte offset ${code(artifact.anchors.vscodeProperties)} but is not treated as canonical CLI settings documentation.`;
 
-  return `# AMP CLI Settings Reference (CODEX, Audited)
+  return `# AMP CLI Settings Reference (Audited)
 
 - Source bundle: ${code(artifact.metadata.bundlePath)}
 - Build version: ${code(artifact.metadata.buildVersion)}
 - Generated: ${code(artifact.metadata.generatedAt)}
 - Extraction artifact: ${code(ARTIFACT_PATH)}
 - Source anchors:
-  - ${code('var z86={')} at byte offset ${code(artifact.anchors.z86)}
-  - ${code('properties:{"amp.url"')} at byte offset ${code(artifact.anchors.vscodeProperties)}
+  - settings registry object at byte offset ${code(artifact.anchors.z86)}
 
 ## Summary
 - CLI settings registry entries (${code('z86')}): **${artifact.settings.z86Count}**
-- VS Code ${code('amp.*')} settings entries: **${artifact.settings.vscodeCount}**
 - Distinct runtime reads (broad static scan): **${artifact.settings.runtimeReadCountDistinct}**
 - Distinct runtime reads (likely Amp settings): **${artifact.settings.runtimeLikelyAmpCount}**
 - Amp-relevant environment variables: **${artifact.settings.envVarsAmpRelevant.length}**
 
 ## Method
 - CLI registry extracted from object literal ${code('z86')}.
-- VS Code settings extracted from ${code('contributes.configuration.properties')} block.
 - Runtime reads extracted from static patterns ${code('settings["..."]')}, ${code('.get("...")')}, and ${code('settings?.prop')}.
 - Runtime metrics are static evidence and can undercount dynamic key construction.
+${editorSchemaNote}
 
 ## CLI Registry (${code('z86')})
 ${table(['Key', 'Type', 'Default', 'Visible', 'Runtime Reads', 'Description'], cliRows)}
 
-## VS Code Settings (${code('amp.*')})
-${table(['Key', 'Type', 'Default', 'Scope', 'Runtime Reads', 'Description'], vscodeRows)}
-
 ## Runtime-Only Candidates
-These keys are likely read at runtime but are not present in ${code('z86')} (and for ${code('amp.*')} keys, not present in the VS Code properties list either).
+These keys are likely read at runtime but are not present in ${code('z86')}.
 
-${table(['Presented Key', 'Bare Key', 'Read Count', 'In z86', 'In VSCode amp.*'], runtimeOnlyRows)}
-
-## Schema Crosswalk
-### In ${code('z86')} but not in VS Code ${code('amp.*')} block
-${z86NotInVscode || '- (none)'}
-
-### In VS Code ${code('amp.*')} block but not in ${code('z86')}
-${vscodeNotInZ86 || '- (none)'}
+${table(['Presented Key', 'Bare Key', 'Read Count', 'In z86'], runtimeOnlyRows)}
 
 ## Environment Variables (Amp-Relevant)
 ${envList}
 
 ## Notes
-- ${code('z86')} currently contains **40** keys in this build.
-- VS Code ${code('amp.*')} properties currently contain **36** keys in this build.
-- This resolves prior drift where some docs claimed 42/35 for these counts.
+- The CLI settings registry currently contains **${artifact.settings.z86Count}** keys in this build.
+- IDE integration still exists in Amp, but this CLI bundle does not include a VS Code extension settings contribution schema.
 `;
 }
 
@@ -206,7 +169,7 @@ function buildEndpointsDoc() {
 
   const likelyApiList = likelyApiPaths.map((p) => `- ${code(p)}`).join('\n');
 
-  return `# AMP CLI Endpoints and Models (CODEX, Audited)
+  return `# AMP CLI Endpoints and Models (Audited)
 
 - Source bundle: ${code(artifact.metadata.bundlePath)}
 - Build version: ${code(artifact.metadata.buildVersion)}
@@ -299,16 +262,16 @@ function buildAgentToolsDoc() {
   const inSW0NotResolvedList = inSW0NotResolved.map((n) => `- ${code(n)}`).join('\n') || '- (none)';
   const resolvedNotInSW0List = resolvedNotInSW0.map((n) => `- ${code(n)}`).join('\n') || '- (none)';
 
-  return `# AMP Agent Tools and Modes (CODEX, Audited)
+  return `# AMP Agent Tools and Modes (Audited)
 
 - Source bundle: ${code(artifact.metadata.bundlePath)}
 - Build version: ${code(artifact.metadata.buildVersion)}
 - Generated: ${code(artifact.metadata.generatedAt)}
 - Extraction artifact: ${code(ARTIFACT_PATH)}
 - Source anchors:
-  - ${code('sW0=[')} at byte offset ${code(artifact.anchors.sW0)}
-  - ${code('HL=')} at byte offset ${code(artifact.anchors.modesHL)}
-  - ${code('D5=')} at byte offset ${code(artifact.anchors.subagentsD5)}
+  - static/fallback tool list source at byte offset ${code(artifact.anchors.sW0)}
+  - mode registry at byte offset ${code(artifact.anchors.modesHL)}
+  - subagent registry at byte offset ${code(artifact.anchors.subagentsD5)}
 
 ## Summary
 - Static known tool-name list (${code('sW0')}): **${artifact.tools.sW0Count}**
@@ -348,7 +311,7 @@ ${resolvedNotInSW0List}
 }
 
 function buildAuditDoc() {
-  return `# CODEX Extraction Audit
+  return `# Extraction Audit
 
 - Artifact: ${code(ARTIFACT_PATH)}
 - Generated: ${code(artifact.metadata.generatedAt)}
@@ -358,11 +321,13 @@ function buildAuditDoc() {
 
 ## Verified High-Signal Counts
 - ${code('z86')} settings keys: **${artifact.settings.z86Count}**
-- VS Code ${code('amp.*')} properties keys: **${artifact.settings.vscodeCount}**
 - ${code('sW0')} tool-name entries: **${artifact.tools.sW0Count}**
 - Agent modes (${code('HL')}): **${artifact.modes.modeCount}**
 - Subagent modes (${code('D5')}): **${artifact.modes.subagentCount}**
 - Model catalog (${code('D4')}): **${artifact.models.modelCount}**
+
+## Editor Settings Schema
+- No VS Code extension settings contribution block was found in this CLI bundle. IDE integration is still present, but settings documentation is based on the CLI settings registry and runtime reads.
 
 ## Reproduction
 \`\`\`bash
@@ -375,9 +340,7 @@ node amp-extractions/scripts/generate_codex_docs.mjs
 function collectSettingsClassification() {
   const z86Keys = artifact.settings.z86Keys;
   const runtimeCounts = artifact.settings.runtimeReadCounts;
-  const vscodeKeys = artifact.settings.vscodeKeys;
   const z86Set = new Set(z86Keys);
-  const vscodeSet = new Set(vscodeKeys);
   const likely = artifact.settings.runtimeLikelyAmpKeys;
 
   const cliSchemaRead = [];
@@ -388,19 +351,11 @@ function collectSettingsClassification() {
     else cliSchemaOnly.push({ key, reads: 0 });
   }
 
-  const vscodeSchemaRead = [];
-  const vscodeSchemaOnly = [];
-  for (const key of vscodeKeys) {
-    const reads = runtimeCounts[key] || 0;
-    if (reads > 0) vscodeSchemaRead.push({ key, reads });
-    else vscodeSchemaOnly.push({ key, reads: 0 });
-  }
-
   const runtimeOnly = likely
     .filter((key) => {
       if (key.startsWith('amp.')) {
         const bare = key.slice(4);
-        return !z86Set.has(bare) && !vscodeSet.has(key);
+        return !z86Set.has(bare);
       }
       return !z86Set.has(key);
     })
@@ -409,8 +364,6 @@ function collectSettingsClassification() {
   return {
     cliSchemaRead,
     cliSchemaOnly,
-    vscodeSchemaRead,
-    vscodeSchemaOnly,
     runtimeOnly,
   };
 }
@@ -419,7 +372,7 @@ function buildSettingsVerificationDoc() {
   const c = collectSettingsClassification();
   const asList = (items, formatKey = (x) => x) => items.map((x) => `- ${code(formatKey(x))} (reads: ${x.reads})`).join('\n') || '- (none)';
 
-  return `# AMP CLI Settings Verification Status (CODEX, Audited)
+  return `# AMP CLI Settings Verification Status (Audited)
 
 - Source bundle: ${code(artifact.metadata.bundlePath)}
 - Build version: ${code(artifact.metadata.buildVersion)}
@@ -429,15 +382,12 @@ function buildSettingsVerificationDoc() {
 ## Classification Model
 - ${code('CLI-SCHEMA+READ')}: key exists in ${code('z86')} and has at least one static runtime read.
 - ${code('CLI-SCHEMA-ONLY')}: key exists in ${code('z86')} with no static runtime read hit.
-- ${code('VSCODE-SCHEMA+READ')}: key exists in VS Code ${code('amp.*')} schema and is read by direct ${code('amp.*')} key.
-- ${code('VSCODE-SCHEMA-ONLY')}: key exists in VS Code ${code('amp.*')} schema with no direct ${code('amp.*')} static read hit.
 - ${code('RUNTIME-ONLY-CANDIDATE')}: likely Amp setting key read at runtime but absent from ${code('z86')}.
+- No VS Code extension settings contribution block was found in this CLI bundle, so verification is based on the CLI registry and runtime reads.
 
 ## Totals
 - ${code('CLI-SCHEMA+READ')}: **${c.cliSchemaRead.length}**
 - ${code('CLI-SCHEMA-ONLY')}: **${c.cliSchemaOnly.length}**
-- ${code('VSCODE-SCHEMA+READ')}: **${c.vscodeSchemaRead.length}**
-- ${code('VSCODE-SCHEMA-ONLY')}: **${c.vscodeSchemaOnly.length}**
 - ${code('RUNTIME-ONLY-CANDIDATE')}: **${c.runtimeOnly.length}**
 
 ## CLI-SCHEMA+READ
@@ -445,12 +395,6 @@ ${asList(c.cliSchemaRead, (x) => `amp.${x.key}`)}
 
 ## CLI-SCHEMA-ONLY
 ${asList(c.cliSchemaOnly, (x) => `amp.${x.key}`)}
-
-## VSCODE-SCHEMA+READ
-${asList(c.vscodeSchemaRead, (x) => x.key)}
-
-## VSCODE-SCHEMA-ONLY
-${asList(c.vscodeSchemaOnly, (x) => x.key)}
 
 ## RUNTIME-ONLY-CANDIDATE
 ${asList(c.runtimeOnly, (x) => (x.key.startsWith('amp.') ? x.key : `amp.${x.key}`))}
@@ -470,7 +414,7 @@ function buildTestingGuideDoc() {
 
   const targets = topRuntimeOnly.map((k) => `- ${code(k)}`).join('\n') || '- (none)';
 
-  return `# AMP CLI Settings Testing Guide (CODEX, Audited)
+  return `# AMP CLI Settings Testing Guide (Audited)
 
 - Source bundle: ${code(artifact.metadata.bundlePath)}
 - Build version: ${code(artifact.metadata.buildVersion)}
@@ -519,7 +463,7 @@ Conclusion: WORKS | PARTIAL | NO-OP
 }
 
 function buildErrataDoc() {
-  return `# Documentation Errata (CODEX, Audited)
+  return `# Documentation Errata (Audited)
 
 - Source bundle: ${code(artifact.metadata.bundlePath)}
 - Build version: ${code(artifact.metadata.buildVersion)}
@@ -527,34 +471,34 @@ function buildErrataDoc() {
 
 ## Corrected High-Impact Drift
 1. ${code('z86')} setting count corrected to **${artifact.settings.z86Count}**.
-2. VS Code ${code('amp.*')} properties count corrected to **${artifact.settings.vscodeCount}**.
-3. Static known tool-name list ${code('sW0')} count corrected to **${artifact.tools.sW0Count}**.
-4. ${code('_CODEX')} settings/config docs now come from machine-generated artifact data instead of manual partial extraction.
+2. Static known tool-name list ${code('sW0')} count corrected to **${artifact.tools.sW0Count}**.
+3. Settings/config docs now come from machine-generated artifact data instead of manual partial extraction.
+4. No VS Code extension settings contribution block was found in this CLI bundle; VS Code IDE integration should not be conflated with an extension settings schema.
 
 ## Artifact-Backed Sources
-- ${code('amp-extractions/meta/extraction-artifacts_CODEX.json')}
-- ${code('amp-extractions/meta/extraction-audit_CODEX.md')}
-- ${code('amp-extractions/config/settings_CODEX.md')}
-- ${code('amp-extractions/config/endpoints_CODEX.md')}
-- ${code('amp-extractions/agents/agent-tools_CODEX.md')}
+- ${code('amp-extractions/meta/extraction-artifacts.json')}
+- ${code('amp-extractions/meta/extraction-audit.md')}
+- ${code('amp-extractions/config/settings.md')}
+- ${code('amp-extractions/config/endpoints.md')}
+- ${code('amp-extractions/agents/agent-tools.md')}
 `;
 }
 
 function buildConfigReadmeDoc() {
-  return `# AMP Config Docs Index (CODEX, Audited)
+  return `# AMP Config Docs Index (Audited)
 
 This directory contains artifact-backed configuration documentation for build ${code(artifact.metadata.buildVersion)}.
 
 ## Primary Docs
-- ${code('settings_CODEX.md')}: full ${code('z86')} + VS Code schema + runtime-read crosswalk.
-- ${code('settings-verification-status_CODEX.md')}: static evidence classification by schema/read status.
-- ${code('testing-guide_CODEX.md')}: manual validation workflow for ambiguous settings.
-- ${code('endpoints_CODEX.md')}: provider endpoints, model catalog, and API path inventory.
-- ${code('ERRATA_CODEX.md')}: corrected drift and audit notes.
+- ${code('settings.md')}: full settings registry + runtime-read crosswalk.
+- ${code('settings-verification-status.md')}: static evidence classification by schema/read status.
+- ${code('testing-guide.md')}: manual validation workflow for ambiguous settings.
+- ${code('endpoints.md')}: provider endpoints, model catalog, and API path inventory.
+- ${code('ERRATA.md')}: corrected drift and audit notes.
 
 ## Audit Artifacts
-- ${code('../meta/extraction-artifacts_CODEX.json')}
-- ${code('../meta/extraction-audit_CODEX.md')}
+- ${code('../meta/extraction-artifacts.json')}
+- ${code('../meta/extraction-audit.md')}
 
 ## Reproduction
 \`\`\`bash
@@ -564,21 +508,21 @@ node amp-extractions/scripts/generate_codex_docs.mjs
 `;
 }
 
-writeFile('amp-extractions/config/settings_CODEX.md', buildSettingsDoc());
-writeFile('amp-extractions/config/endpoints_CODEX.md', buildEndpointsDoc());
-writeFile('amp-extractions/agents/agent-tools_CODEX.md', buildAgentToolsDoc());
-writeFile('amp-extractions/meta/extraction-audit_CODEX.md', buildAuditDoc());
-writeFile('amp-extractions/config/settings-verification-status_CODEX.md', buildSettingsVerificationDoc());
-writeFile('amp-extractions/config/testing-guide_CODEX.md', buildTestingGuideDoc());
-writeFile('amp-extractions/config/ERRATA_CODEX.md', buildErrataDoc());
-writeFile('amp-extractions/config/README_CODEX.md', buildConfigReadmeDoc());
+writeFile('amp-extractions/config/settings.md', buildSettingsDoc());
+writeFile('amp-extractions/config/endpoints.md', buildEndpointsDoc());
+writeFile('amp-extractions/agents/agent-tools.md', buildAgentToolsDoc());
+writeFile('amp-extractions/meta/extraction-audit.md', buildAuditDoc());
+writeFile('amp-extractions/config/settings-verification-status.md', buildSettingsVerificationDoc());
+writeFile('amp-extractions/config/testing-guide.md', buildTestingGuideDoc());
+writeFile('amp-extractions/config/ERRATA.md', buildErrataDoc());
+writeFile('amp-extractions/config/README.md', buildConfigReadmeDoc());
 
 console.log('Generated:');
-console.log('- amp-extractions/config/settings_CODEX.md');
-console.log('- amp-extractions/config/endpoints_CODEX.md');
-console.log('- amp-extractions/agents/agent-tools_CODEX.md');
-console.log('- amp-extractions/meta/extraction-audit_CODEX.md');
-console.log('- amp-extractions/config/settings-verification-status_CODEX.md');
-console.log('- amp-extractions/config/testing-guide_CODEX.md');
-console.log('- amp-extractions/config/ERRATA_CODEX.md');
-console.log('- amp-extractions/config/README_CODEX.md');
+console.log('- amp-extractions/config/settings.md');
+console.log('- amp-extractions/config/endpoints.md');
+console.log('- amp-extractions/agents/agent-tools.md');
+console.log('- amp-extractions/meta/extraction-audit.md');
+console.log('- amp-extractions/config/settings-verification-status.md');
+console.log('- amp-extractions/config/testing-guide.md');
+console.log('- amp-extractions/config/ERRATA.md');
+console.log('- amp-extractions/config/README.md');
