@@ -2,11 +2,11 @@
 
 This repository contains artifact-backed documentation extracted from the Amp CLI minified bundle.
 
-## Current Source
+## Source Metadata
 
 - Build: `0.0.1777185893-gae6d40`
-- Bundle: `npm-packages/0.0.1777185893-gae6d40/node_modules/@sourcegraph/amp/dist/main.js`
 - Extraction artifact: `amp-extractions/meta/extraction-artifacts.json`
+- Note: the vendored CLI bundle and SDK directories were removed from this repository; only the extracted docs and metadata remain.
 
 ## Primary Docs
 
@@ -28,7 +28,7 @@ Detailed reference:
 ## Regeneration
 
 ```bash
-node amp-extractions/scripts/extract_bundle_codex.mjs npm-packages/0.0.1777185893-gae6d40/node_modules/@sourcegraph/amp/dist/main.js amp-extractions/meta/extraction-artifacts.json
+node amp-extractions/scripts/extract_bundle_codex.mjs /path/to/@sourcegraph/amp/dist/main.js amp-extractions/meta/extraction-artifacts.json
 node amp-extractions/scripts/generate_codex_docs.mjs amp-extractions/meta/extraction-artifacts.json
 node amp-extractions/scripts/generate_simple_docs.mjs amp-extractions/meta/extraction-artifacts.json
 ```
